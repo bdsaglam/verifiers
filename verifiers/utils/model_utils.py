@@ -12,7 +12,7 @@ def get_model(model_name: str, model_kwargs: Union[Dict[str, Any], None] = None)
     if model_kwargs is None:
         model_kwargs = dict(
             torch_dtype=torch.bfloat16,
-            attn_implementation="flash_attention_2",
+            # attn_implementation="flash_attention_2",
             use_cache=False,
         )
     if is_liger_available():

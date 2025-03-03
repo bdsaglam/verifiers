@@ -6,7 +6,7 @@ authors = [
 version = "0.1.0"
 description = "Verifiers for reinforcement learning with LLMs"
 license = {text = "MIT"}
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "torch",
     "setuptools",
@@ -19,4 +19,9 @@ dependencies = [
     "trl @ git+https://github.com/huggingface/trl.git",
     "liger-kernel>=0.5.2",
     "vllm>=0.7.3",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
 ]

@@ -7,10 +7,11 @@ model, tokenizer = vf.get_model_and_tokenizer(model_name)
 
 # Initialize tool environment for GSM8K
 vf_env = vf.ToolEnv(
+    tokenizer=tokenizer,
     dataset="gsm8k",
     few_shot=CALCULATOR_FEW_SHOT[0],
     tools=[calculator],
-    max_steps=5
+
 )
 dataset = vf_env.get_dataset()
 eval_dataset = vf_env.get_eval_dataset(n=100)
@@ -20,14 +21,14 @@ rubric = vf_env.get_rubric()
 run_name = "gsm8k-calc_" + model_name.split("/")[-1].lower()
 training_args = vf.get_default_grpo_config(
     run_name=run_name,
-    num_gpus=8
+    num_gpus=1
 )
 # rollouts per prompt
-training_args.num_generations = 7
-# minibatch size per GPU ( bs 6 * 7 gpus / 7 rollouts -> 6 prompts per batch)
-training_args.per_device_train_batch_size = 6
-# batches to accumulate (6 prompts * 4 -> 32 prompts per global batch)
-training_args.gradient_accumulation_steps = 4
+training_args.num_generations = 4
+# minibatch size per GPU 
+training_args.per_device_train_batch_size = 16
+# batches to accumulate 
+training_args.gradient_acumulation_steps = 4
 # steps per global batch (1 on-policy, 1 off-policy)
 training_args.num_iterations = 2
 # no ref model
