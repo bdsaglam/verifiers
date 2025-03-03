@@ -224,7 +224,7 @@ CALCULATOR_FEW_SHOT = [
             )
         },
         {
-            'role': 'user',
+            'role': 'tool',
             'content': result_parser.format(result="36")
         },
         {
@@ -235,14 +235,14 @@ CALCULATOR_FEW_SHOT = [
             )
         },
         {
-            'role': 'user',
+            'role': 'tool',
             'content': result_parser.format(result="48")
         },
         {
             'role': 'assistant',
             'content': tool_parser.format(
                 reasoning="Together they have 48 marbles:\n- Tom: 12 marbles\n- Janet: 36 marbles (3 times Tom's)\n- Total: 48 marbles",
-                answer="48 marbles"
+                answer="48"
             )
         }
     ],
@@ -252,7 +252,7 @@ CALCULATOR_FEW_SHOT = [
             'content': 'Samantha is baking cookies. Each batch requires 2.5 cups of flour. If she has 10 cups of flour, how many complete batches can she make?'
         },
         {
-            'role': 'assistant',
+            'role': 'tool',
             'content': tool_parser.format(
                 reasoning="To find how many complete batches Samantha can make, I need to divide the total amount of flour by the amount needed per batch.",
                 tool='{"name": "calculator", "args": {"expression": "10 / 2.5"}}'
@@ -263,10 +263,10 @@ CALCULATOR_FEW_SHOT = [
             'content': result_parser.format(result="4.0")
         },
         {
-            'role': 'assistant',
+            'role': 'tool',
             'content': tool_parser.format(
                 reasoning="Samantha has 10 cups of flour and each batch requires 2.5 cups of flour.\n10 ÷ 2.5 = 4\nSo Samantha can make 4 complete batches of cookies with her 10 cups of flour.",
-                answer="4 batches"
+                answer="4"
             )
         }
     ]

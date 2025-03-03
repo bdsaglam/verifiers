@@ -33,7 +33,7 @@ class ToolRubric(Rubric):
                     parsed = self.parser.parse(msg['content'])
                     if hasattr(parsed, 'tool') and parsed.tool is not None:
                         # Found a properly formatted tool message
-                        if i + 1 < len(trajectory) and trajectory[i + 1]['role'] == 'user':
+                        if i + 1 < len(trajectory) and trajectory[i + 1]['role'] == 'tool':
                             tool_attempts += 1
                             # Check response with env_parser
                             parsed_response = self.env_parser.parse(trajectory[i + 1]['content'])
