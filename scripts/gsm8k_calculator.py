@@ -70,9 +70,9 @@ def train(
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
     log_level: str = "INFO",
-    suffix: str = "gsm8k-calc",
+    suffix: str = "grpo-tool",
 ):
-    """Train a model using GRPO on the GSM8K dataset with calculator tool."""
+    """Train a model using GRPO for tool use."""
 
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -100,6 +100,7 @@ def train(
     )
 
     # Configure training arguments
+    suffix = f"{suffix}-{dataset_path.split('/')[-1]}"
     run_name = f"{model_name.split('/')[-1]}-{suffix}"
 
     training_args = GRPOConfig(
