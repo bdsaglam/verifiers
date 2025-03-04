@@ -91,7 +91,7 @@ def train(
     # Configure training arguments
     suffix = f"{suffix}-{dataset_path.split('/')[-1]}"
     run_name = f"{model_name.split('/')[-1]}-{suffix}"
-
+    
     training_args = GRPOConfig(
         output_dir=out / run_name,
         learning_rate=learning_rate,
@@ -102,7 +102,7 @@ def train(
         adam_beta1=0.9,
         adam_beta2=0.99,
         max_grad_norm=0.01,
-        num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
+        num_iterations=1,  # steps per global batch (1 on-policy, 1 off-policy)
         beta=beta,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
@@ -131,9 +131,9 @@ def train(
     # Initialize trainer
     trainer = vf.GRPOEnvTrainer(
         model=model,
-        processing_class=tokenizer,
-        reward_funcs=vf_env.get_rubric(),
         env=vf_env,
+        reward_funcs=vf_env.get_rubric(),
+        processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),
         eval_dataset=vf_env.get_eval_dataset(),
