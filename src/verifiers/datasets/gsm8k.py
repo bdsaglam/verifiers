@@ -12,5 +12,6 @@ def preprocess_dataset(dataset: Dataset) -> Dataset:
         lambda x: {
             "prompt": [{"role": "user", "content": x["question"]}],
             "answer": extract_hash_answer(x["answer"]),
-        }
+        },
+        remove_columns=["question"],
     )

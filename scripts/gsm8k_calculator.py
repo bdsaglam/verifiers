@@ -1,9 +1,6 @@
-import gc
 import logging
 from pathlib import Path
-from typing import Optional
 
-import torch
 import typer
 from accelerate import Accelerator
 from datasets import Dataset, load_dataset
@@ -21,12 +18,6 @@ log = logging.getLogger(__name__)
 app = typer.Typer()
 
 accelerator = Accelerator()
-
-
-def clear_memory():
-    """Clear GPU memory"""
-    torch.cuda.empty_cache()
-    gc.collect()
 
 
 def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
@@ -54,22 +45,20 @@ def train(
     model_name: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
     dataset_path: str = typer.Option("openai/gsm8k"),
     dataset_name: str = typer.Option("main"),
-    dataset_split: str = typer.Option("train[:128]"),
+    dataset_split: str = typer.Option("train"),
     eval_dataset_path: str = typer.Option("openai/gsm8k"),
     eval_dataset_name: str = typer.Option("main"),
-    eval_dataset_split: str = typer.Option("test"),
+    eval_dataset_split: str = typer.Option("test[:128]"),
     max_prompt_length: int = typer.Option(1024, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
-    num_generations: int = typer.Option(4, "-g", help="Number of generations per prompt"),
-    batch_size: int = typer.Option(8, "-bs", help="Per device batch size"),
-    gradient_accumulation_steps: int = typer.Option(4, "-gacc"),
+    num_generations: int = typer.Option(2, "-g", help="Number of generations per prompt"),
+    batch_size: int = typer.Option(16, "-bs", help="Per device batch size"),
+    gradient_accumulation_steps: int = typer.Option(1, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
     eval_steps: int = typer.Option(100, "--eval-steps"),
-    eval_batch_size: int = typer.Option(8, "--eval-bs"),
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
-    log_level: str = "INFO",
     suffix: str = "grpo-tool",
 ):
     """Train a model using GRPO for tool use."""
@@ -80,12 +69,12 @@ def train(
     hub_dir = Path(hub_dir)
     hub_dir.mkdir(parents=True, exist_ok=True)
 
-    # Set up logging
-    logging.basicConfig(level=log_level)
-
     # Load dataset
     train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
+    log.info(f"Train dataset: {len(train_dataset)}")
+
     eval_dataset = prepare_dataset(eval_dataset_path, eval_dataset_name, eval_dataset_split)
+    log.info(f"Eval dataset: {len(eval_dataset)}")
 
     # Load model and tokenizer
     model, tokenizer = vf.get_model_and_tokenizer(model_name)
@@ -105,7 +94,6 @@ def train(
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
-        run_name=run_name,
         learning_rate=learning_rate,
         lr_scheduler_type="constant_with_warmup",
         warmup_steps=10,
@@ -131,11 +119,12 @@ def train(
         log_on_each_node=False,
         log_completions=True,
         report_to="wandb",
+        run_name=run_name,
         reward_weights=None,
         eval_strategy="steps",
         eval_on_start=True,
         eval_steps=eval_steps,
-        per_device_eval_batch_size=eval_batch_size,
+        per_device_eval_batch_size=batch_size,
         eval_accumulation_steps=1,
     )
 
@@ -146,8 +135,8 @@ def train(
         reward_funcs=vf_env.get_rubric(),
         env=vf_env,
         args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        train_dataset=vf_env.get_dataset(),
+        eval_dataset=vf_env.get_eval_dataset(),
     )
 
     # Start training
@@ -155,15 +144,7 @@ def train(
 
     # Save artifacts if main process
     if accelerator.is_main_process:
-        final_model_id = run_name
-        save_artifacts(model, tokenizer, final_model_id, hub_dir)
-
-
-@app.command("clear")
-def clear():
-    """Clear GPU memory"""
-    log.info("Clearing GPU memory")
-    clear_memory()
+        save_artifacts(model, tokenizer, run_name, hub_dir)
 
 
 if __name__ == "__main__":

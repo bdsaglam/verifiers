@@ -1,12 +1,13 @@
 import verifiers as vf
-from verifiers.tools import calculator
+from verifiers.envs.tool_env_legacy import ToolEnv
 from verifiers.prompts import CALCULATOR_FEW_SHOT
+from verifiers.tools import calculator
 
 model_name = "Qwen/Qwen2.5-1.5B-Instruct"
 model, tokenizer = vf.get_model_and_tokenizer(model_name)
 
 # Initialize tool environment for GSM8K
-vf_env = vf.ToolEnv(
+vf_env = ToolEnv(
     tokenizer=tokenizer,
     train_dataset="gsm8k",
     few_shot=CALCULATOR_FEW_SHOT[0],
@@ -21,7 +22,7 @@ rubric = vf_env.get_rubric()
 run_name = "gsm8k-calc_" + model_name.split("/")[-1].lower()
 training_args = vf.get_default_grpo_config(
     run_name=run_name,
-    num_gpus=1
+    num_gpus=2
 )
 # rollouts per prompt
 training_args.num_generations = 4

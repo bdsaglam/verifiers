@@ -85,8 +85,9 @@ CODE_FEW_SHOT = [
     ]
 ]
 
-tool_parser = XMLParser(fields=["reasoning", ("tool", "answer")])
+tool_parser = XMLParser(fields=["reasoning", "tool"])
 result_parser = XMLParser(fields=["result"])
+answer_parser = XMLParser(fields=["reasoning", "answer"])
 
 TOOL_FEW_SHOT = [
     [
@@ -107,7 +108,7 @@ TOOL_FEW_SHOT = [
         },
         {
             'role': 'assistant',
-            'content': tool_parser.format(
+            'content': answer_parser.format(
                 reasoning='The current working directory is /Users/user/project.',
                 answer='/Users/user/project'
             )
@@ -129,7 +130,7 @@ TOOL_FEW_SHOT = [
         },
         {
             'role': 'assistant',
-            'content': tool_parser.format(
+            'content': answer_parser.format(
                 reasoning='There are 42 Python files in the current directory and its subdirectories.',
                 answer='42'
             )
@@ -160,7 +161,7 @@ COMMONSENSE_FEW_SHOT = [
         },
         {
             'role': 'assistant',
-            'content': tool_parser.format(
+            'content': answer_parser.format(
                 reasoning='Based on the comparison, an elephant has a volume level of 5 while a mouse has a volume level of 1 (on a scale of 1-5). The difference of -4 indicates the elephant is much louder.',
                 answer='An elephant would be louder than a mouse.'
             )
@@ -185,7 +186,7 @@ COMMONSENSE_FEW_SHOT = [
         },
         {
             'role': 'assistant',
-            'content': tool_parser.format(
+            'content': answer_parser.format(
                 reasoning='A car has several key properties: it is metallic, fast, loud, and heavy. It belongs to the category of vehicles.',
                 answer='A car is a vehicle that is metallic, fast, loud, and heavy.'
             )
@@ -203,7 +204,7 @@ SEARCH_FEW_SHOT = [
         {'role': 'user', 'content': result_parser.format(
             result="• Mechanical Weathering - Definition, Processes and Types\n  Mechanical weathering, also known as physical weathering, is the process by which rocks are broken down into smaller pieces by external forces. Examples include frost wedging (when water freezes and expands in cracks), thermal expansion/contraction, and pressure release.\n\n• Mechanical and Chemical Weathering - Earth Science\n  Mechanical weathering breaks rocks into smaller pieces without changing their composition. Ice wedging occurs when water gets into cracks, freezes, and expands, breaking the rock apart. Other forms include plant root growth, animal activity, and abrasion.\n\n• Mechanical Weathering: Definition, Types, Examples - Geology Science\n  Types of mechanical weathering include frost wedging, salt crystallization, thermal expansion, plant activity, and animal activity. The most common mechanical weathering process in cold climates is frost wedging, where water enters rock cracks, freezes, and expands."
         )},
-        {'role': 'assistant', 'content': tool_parser.format(
+        {'role': 'assistant', 'content': answer_parser.format(
             reasoning="Based on the search results, mechanical weathering is the process by which rocks are broken down into smaller pieces by external forces, without changing their chemical composition. Some examples include:\n\n1. Frost wedging - when water gets into cracks, freezes, and expands, breaking the rock apart\n2. Thermal expansion/contraction\n3. Plant root growth\n4. Animal activity\n5. Abrasion\n\nLooking at the answer choices:\nA. A rock turns red when iron minerals are exposed to oxygen - This is chemical weathering, as it involves a chemical change (oxidation).\nB. A rock breaks apart after water freezes and expands in a crack - This is frost wedging, a form of mechanical weathering.\nC. A rock dissolves as acidic rainwater flows over its surface - This is chemical weathering (dissolution).\nD. A rock changes composition when exposed to extreme heat - This is a chemical/thermal change, not mechanical weathering.\n\nThe answer is B, as it's the only option that describes mechanical weathering.",
             answer="B"
         )}
@@ -220,7 +221,7 @@ CALCULATOR_FEW_SHOT = [
             'role': 'assistant',
             'content': tool_parser.format(
                 reasoning="Let's solve this step by step:\n1. First, calculate how many marbles Janet has (3 times Tom's)",
-                tool='{"name": "calculator", "args": {"expression": "3 * 12"}}'
+                tool=r'{"name": "calculator", "args": {"expression": "3 * 12"}}'
             )
         },
         {
@@ -231,7 +232,7 @@ CALCULATOR_FEW_SHOT = [
             'role': 'assistant',
             'content': tool_parser.format(
                 reasoning="2. Now we know:\n   - Tom has 12 marbles\n   - Janet has 36 marbles\n   Let's add them together",
-                tool='{"name": "calculator", "args": {"expression": "36 + 12"}}'
+                tool=r'{"name": "calculator", "args": {"expression": "36 + 12"}}'
             )
         },
         {
@@ -240,7 +241,7 @@ CALCULATOR_FEW_SHOT = [
         },
         {
             'role': 'assistant',
-            'content': tool_parser.format(
+            'content': answer_parser.format(
                 reasoning="Together they have 48 marbles:\n- Tom: 12 marbles\n- Janet: 36 marbles (3 times Tom's)\n- Total: 48 marbles",
                 answer="48"
             )
@@ -252,19 +253,19 @@ CALCULATOR_FEW_SHOT = [
             'content': 'Samantha is baking cookies. Each batch requires 2.5 cups of flour. If she has 10 cups of flour, how many complete batches can she make?'
         },
         {
-            'role': 'tool',
+            'role': 'assistant',
             'content': tool_parser.format(
                 reasoning="To find how many complete batches Samantha can make, I need to divide the total amount of flour by the amount needed per batch.",
-                tool='{"name": "calculator", "args": {"expression": "10 / 2.5"}}'
+                tool=r'{"name": "calculator", "args": {"expression": "10 / 2.5"}}'
             )
         },
         {
-            'role': 'user',
+            'role': 'tool',
             'content': result_parser.format(result="4.0")
         },
         {
-            'role': 'tool',
-            'content': tool_parser.format(
+            'role': 'assistant',
+            'content': answer_parser.format(
                 reasoning="Samantha has 10 cups of flour and each batch requires 2.5 cups of flour.\n10 ÷ 2.5 = 4\nSo Samantha can make 4 complete batches of cookies with her 10 cups of flour.",
                 answer="4"
             )
