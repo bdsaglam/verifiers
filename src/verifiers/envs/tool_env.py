@@ -88,14 +88,6 @@ class ToolEnv(MultiStepEnv):
         max_steps: int = 10,
         **kwargs,
     ):
-        # Infer schemas from tool functions
-        self.tool_schemas = [infer_schema_from_function(tool) for tool in tools]
-        self.tools = {tool.__name__: tool for tool in tools}
-
-        # Format the system prompt with tool descriptions
-        tool_descriptions = format_tool_descriptions(self.tool_schemas)
-        formatted_prompt = system_prompt.format(tool_descriptions=tool_descriptions)
-
         # Add stop tokens from the tokenizer
         self.special_stop_tokens = [
             "</tool>",
@@ -115,12 +107,23 @@ class ToolEnv(MultiStepEnv):
             "include_stop_str_in_output": True,
             **additional_sampling_args,
         }
-
         super().__init__(
             mask_env_response=mask_env_response,
             sampling_args=sampling_args,
             **kwargs,
         )
+
+        self.system_prompt = system_prompt
+        self.few_shot = few_shot
+
+        # Infer schemas from tool functions
+        self.tool_schemas = [infer_schema_from_function(tool) for tool in tools]
+        self.tools = {tool.__name__: tool for tool in tools}
+
+        # Format the system prompt with tool descriptions
+        tool_descriptions = format_tool_descriptions(self.tool_schemas)
+        formatted_prompt = system_prompt.format(tool_descriptions=tool_descriptions)
+  
         self.dataset = prepare_dataset_for_env(
             dataset=train_dataset,
             system_prompt=formatted_prompt,

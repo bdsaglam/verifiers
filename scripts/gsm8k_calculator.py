@@ -51,7 +51,7 @@ def save_artifacts(model, tokenizer, model_id: str, hub_dir: Path):
 
 @app.command("train")
 def train(
-    model_name: str = typer.Option("meta-llama/Llama-3.1-8B-Instruct", "--model"),
+    model_name: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
     dataset_path: str = typer.Option("openai/gsm8k"),
     dataset_name: str = typer.Option("main"),
     dataset_split: str = typer.Option("train[:128]"),
