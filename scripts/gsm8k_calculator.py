@@ -6,12 +6,13 @@ from typing import Optional
 import torch
 import typer
 from accelerate import Accelerator
+from datasets import Dataset, load_dataset
+from dotenv import load_dotenv
+from trl import GRPOConfig
 
 import verifiers as vf
 from verifiers.prompts import CALCULATOR_FEW_SHOT
 from verifiers.tools import calculator
-from trl import GRPOConfig
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -28,11 +29,17 @@ def clear_memory():
     gc.collect()
 
 
-def prepare_dataset(env):
-    """Prepare the GSM8K dataset for training"""
-    dataset = env.get_dataset()
-    eval_dataset = env.get_eval_dataset(n=100)
-    return dataset, eval_dataset
+def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
+    ds = load_dataset(dataset_path, dataset_name, split=split)
+
+    if "gsm8k" in dataset_path:
+        from verifiers.datasets.gsm8k import preprocess_dataset
+
+        ds = preprocess_dataset(ds)
+    else:
+        raise ValueError(f"Dataset {dataset_path} not supported")
+
+    return ds
 
 
 def save_artifacts(model, tokenizer, model_id: str, hub_dir: Path):
@@ -44,7 +51,13 @@ def save_artifacts(model, tokenizer, model_id: str, hub_dir: Path):
 
 @app.command("train")
 def train(
-    model_name: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
+    model_name: str = typer.Option("meta-llama/Llama-3.1-8B-Instruct", "--model"),
+    dataset_path: str = typer.Option("openai/gsm8k"),
+    dataset_name: str = typer.Option("main"),
+    dataset_split: str = typer.Option("train[:128]"),
+    eval_dataset_path: str = typer.Option("openai/gsm8k"),
+    eval_dataset_name: str = typer.Option("main"),
+    eval_dataset_split: str = typer.Option("test"),
     max_prompt_length: int = typer.Option(1024, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
     num_generations: int = typer.Option(4, "-g", help="Number of generations per prompt"),
@@ -64,31 +77,33 @@ def train(
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
 
+    hub_dir = Path(hub_dir)
+    hub_dir.mkdir(parents=True, exist_ok=True)
+
     # Set up logging
     logging.basicConfig(level=log_level)
+
+    # Load dataset
+    train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
+    eval_dataset = prepare_dataset(eval_dataset_path, eval_dataset_name, eval_dataset_split)
 
     # Load model and tokenizer
     model, tokenizer = vf.get_model_and_tokenizer(model_name)
 
     # Initialize tool environment
     vf_env = vf.ToolEnv(
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        dataset="gsm8k",
         few_shot=CALCULATOR_FEW_SHOT[0],
         tools=[calculator],
     )
 
-    # Prepare datasets
-    dataset, eval_dataset = prepare_dataset(vf_env)
-    rubric = vf_env.get_rubric()
-
     # Configure training arguments
     run_name = f"{model_name.split('/')[-1]}-{suffix}"
-    output_dir = out / run_name
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     training_args = GRPOConfig(
-        output_dir=output_dir,
+        output_dir=out / run_name,
         run_name=run_name,
         learning_rate=learning_rate,
         lr_scheduler_type="constant_with_warmup",
@@ -98,7 +113,7 @@ def train(
         adam_beta1=0.9,
         adam_beta2=0.99,
         max_grad_norm=0.01,
-        num_iterations=2,
+        num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         beta=beta,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
@@ -106,11 +121,11 @@ def train(
         num_generations=num_generations,
         gradient_accumulation_steps=gradient_accumulation_steps,
         gradient_checkpointing=True,
+        use_vllm=True,
+        vllm_gpu_memory_utilization=0.7,
         save_strategy="steps",
         save_steps=100,
         save_only_model=True,
-        use_vllm=True,
-        vllm_gpu_memory_utilization=0.7,
         logging_steps=1,
         log_on_each_node=False,
         log_completions=True,
@@ -127,10 +142,10 @@ def train(
     trainer = vf.GRPOEnvTrainer(
         model=model,
         processing_class=tokenizer,
-        reward_funcs=rubric,
+        reward_funcs=vf_env.get_rubric(),
         env=vf_env,
         args=training_args,
-        train_dataset=dataset,
+        train_dataset=train_dataset,
         eval_dataset=eval_dataset,
     )
 

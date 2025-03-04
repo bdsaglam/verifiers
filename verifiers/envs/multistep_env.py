@@ -13,15 +13,11 @@ from ..imports import LLM, SamplingParams  # type: ignore
 class MultiStepEnv(Environment):
     def __init__(
         self,
-        system_prompt: str = "",
-        few_shot: List[Dict[str, str]] = [],
         sampling_args: Dict[str, Any] = {},
         mask_env_response: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.system_prompt = system_prompt
-        self.few_shot = few_shot
         self.sampling_args = {
             "skip_special_tokens": False,
             "spaces_between_special_tokens": False,

@@ -5,11 +5,11 @@ from typing import Any, Callable, Dict, List
 from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
+from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import MultiStepEnv
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics import ToolRubric
-from verifiers.utils import preprocess_dataset
 
 
 def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
@@ -38,11 +38,7 @@ def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
                         param_doc = line.strip()[len(name) + 1 :].strip()
 
         args[name] = {
-            "type": str(
-                param.annotation.__name__
-                if param.annotation != inspect.Parameter.empty
-                else "any"
-            ),
+            "type": str(param.annotation.__name__ if param.annotation != inspect.Parameter.empty else "any"),
             "description": param_doc,
         }
         if param.default != inspect.Parameter.empty:
@@ -52,11 +48,7 @@ def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
         "name": func.__name__,
         "description": description,
         "args": args,
-        "returns": str(
-            sig.return_annotation.__name__
-            if sig.return_annotation != inspect.Parameter.empty
-            else "any"
-        ),
+        "returns": str(sig.return_annotation.__name__ if sig.return_annotation != inspect.Parameter.empty else "any"),
         "examples": examples,
     }
 
@@ -69,9 +61,7 @@ def format_tool_descriptions(schemas: List[Dict[str, Any]]) -> str:
 
         desc.append("\nArguments:")
         for arg_name, arg_info in schema["args"].items():
-            default = (
-                f" (default: {arg_info['default']})" if "default" in arg_info else ""
-            )
+            default = f" (default: {arg_info['default']})" if "default" in arg_info else ""
             desc.append(f"  - {arg_name}: {arg_info['description']}{default}")
 
         if schema["examples"]:
@@ -88,7 +78,8 @@ class ToolEnv(MultiStepEnv):
     def __init__(
         self,
         tokenizer: Any,
-        dataset: str = "gsm8k",
+        train_dataset: Dataset,
+        eval_dataset: Dataset | None = None,
         tools: List[Callable] = [],
         system_prompt: str = DEFAULT_TOOL_PROMPT_TEMPLATE,
         few_shot: List[Dict[str, str]] = [],
@@ -111,12 +102,14 @@ class ToolEnv(MultiStepEnv):
             "</answer>",
         ]
         additional_stop_tokens = additional_sampling_args.pop("stop", [])
-        stop_tokens = list({
-            tokenizer.eos_token,
-            tokenizer.pad_token,
-            *self.special_stop_tokens,
-            *additional_stop_tokens,
-        })
+        stop_tokens = list(
+            {
+                tokenizer.eos_token,
+                tokenizer.pad_token,
+                *self.special_stop_tokens,
+                *additional_stop_tokens,
+            }
+        )
         sampling_args = {
             "stop": stop_tokens,
             "include_stop_str_in_output": True,
@@ -124,20 +117,26 @@ class ToolEnv(MultiStepEnv):
         }
 
         super().__init__(
-            system_prompt=formatted_prompt,
-            few_shot=few_shot,
             mask_env_response=mask_env_response,
             sampling_args=sampling_args,
             **kwargs,
         )
-        self.dataset_name = dataset
-        self.dataset = preprocess_dataset(
-            dataset_name=dataset,
-            split="train",
+        self.dataset = prepare_dataset_for_env(
+            dataset=train_dataset,
             system_prompt=formatted_prompt,
             few_shot=few_shot,
+            fewshot_prob=1.0,
         )
-        self.eval_dataset = None
+        self.eval_dataset = (
+            prepare_dataset_for_env(
+                dataset=eval_dataset,
+                system_prompt=formatted_prompt,
+                few_shot=few_shot,
+                fewshot_prob=1.0,
+            )
+            if eval_dataset
+            else None
+        )
         self.max_steps = max_steps
         self.rubric = ToolRubric()
         self.llm_parser = XMLParser(fields=["reasoning", ("tool", "answer")])
@@ -147,13 +146,6 @@ class ToolEnv(MultiStepEnv):
         return self.dataset
 
     def get_eval_dataset(self, n: int = -1, **kwargs: Any) -> Dataset | None:
-        if self.eval_dataset is None:
-            self.eval_dataset = preprocess_dataset(
-                dataset_name=self.dataset_name,
-                split="test",
-                system_prompt=self.system_prompt,
-                few_shot=self.few_shot,
-            )
         if n > 0:
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
@@ -194,7 +186,7 @@ class ToolEnv(MultiStepEnv):
         completion_output = kwargs["completion_output"]
         if completion_output.stop_reason not in self.special_stop_tokens:
             return True
-        
+
         try:
             parsed = self.llm_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
@@ -227,9 +219,7 @@ class ToolEnv(MultiStepEnv):
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def env_response(
-        self, messages: List[Dict[str, str]], **kwargs: Any
-    ) -> Dict[str, str]:
+    def env_response(self, messages: List[Dict[str, str]], **kwargs: Any) -> Dict[str, str]:
         try:
             parsed = self.llm_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)

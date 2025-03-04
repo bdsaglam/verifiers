@@ -6,7 +6,7 @@ model_name = "Qwen/Qwen2.5-7B-Instruct"
 model, tokenizer = vf.get_model_and_tokenizer(model_name)
 
 vf_env = vf.ToolEnv(
-    dataset="openbookqa",
+    train_dataset="openbookqa",
     #few_shot=SEARCH_FEW_SHOT[0],
     tools=[search],
     max_steps=3

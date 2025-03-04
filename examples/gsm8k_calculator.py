@@ -8,7 +8,7 @@ model, tokenizer = vf.get_model_and_tokenizer(model_name)
 # Initialize tool environment for GSM8K
 vf_env = vf.ToolEnv(
     tokenizer=tokenizer,
-    dataset="gsm8k",
+    train_dataset="gsm8k",
     few_shot=CALCULATOR_FEW_SHOT[0],
     tools=[calculator],
 
