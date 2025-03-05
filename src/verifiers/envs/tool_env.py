@@ -7,75 +7,10 @@ from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.datasets.utils import prepare_dataset_for_env
-from verifiers.envs.multistep_env import MultiStepEnv
+from verifiers.envs.multistep_env import MultiStepEnv, State, CompletionOutput
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics import ToolRubric
-
-
-def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
-    """Infers a tool schema from a function's signature and docstring."""
-    sig = inspect.signature(func)
-    doc = dedent(inspect.getdoc(func) or "")
-
-    # Parse docstring sections
-    doc_parts = doc.split("\n\n")
-    description = doc_parts[0].strip()
-
-    # Extract examples if present
-    examples = []
-    for part in doc_parts:
-        part = part.strip()
-        if part.startswith("Examples:"):
-            examples = [line.strip() for line in part.split("\n")[1:] if line.strip()]
-
-    # Build args schema
-    args = {}
-    for name, param in sig.parameters.items():
-        if name == "kwargs" or name == "run_context":
-            continue
-        param_doc = ""
-        for part in doc_parts:
-            if part.strip().startswith("Args:"):
-                for line in part.split("\n")[1:]:
-                    if line.strip().startswith(f"{name}:"):
-                        param_doc = line.strip()[len(name) + 1 :].strip()
-
-        args[name] = {
-            "type": str(param.annotation.__name__ if param.annotation != inspect.Parameter.empty else "any"),
-            "description": param_doc,
-        }
-        if param.default != inspect.Parameter.empty:
-            args[name]["default"] = param.default
-
-    return {
-        "name": func.__name__,
-        "description": description,
-        "args": args,
-        "returns": str(sig.return_annotation.__name__ if sig.return_annotation != inspect.Parameter.empty else "any"),
-        "examples": examples,
-    }
-
-
-def format_tool_descriptions(schemas: List[Dict[str, Any]]) -> str:
-    """Formats tool schemas into a user-friendly description string."""
-    descriptions = []
-    for schema in schemas:
-        desc = [f"{schema['name']}: {schema['description']}"]
-
-        desc.append("\nArguments:")
-        for arg_name, arg_info in schema["args"].items():
-            default = f" (default: {arg_info['default']})" if "default" in arg_info else ""
-            desc.append(f"  - {arg_name}: {arg_info['description']}{default}")
-
-        if schema["examples"]:
-            desc.append("\nExamples:")
-            for example in schema["examples"]:
-                desc.append(f"  {example}")
-
-        descriptions.append("\n".join(desc))
-
-    return "\n\n".join(descriptions)
 
 
 class ToolEnv(MultiStepEnv):
@@ -183,25 +118,24 @@ class ToolEnv(MultiStepEnv):
                     pass
         return step_count
 
-    def is_completed(self, messages: List[Dict[str, str]], **kwargs: Any) -> bool:
+    def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         # Check if we've hit max steps by counting tool uses in the message history
-        step_count = self._get_step_count(messages)
+        step_count = self._get_step_count(state["messages"])
         if step_count >= self.max_steps:
             return True
 
         # Check if the completion output stopped because of a tool call
-        completion_output = kwargs["completion_output"]
         if completion_output.stop_reason not in self.special_stop_tokens:
             return True
 
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.llm_parser.parse(state["messages"][-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
             return hasattr(parsed, "answer") and parsed.answer is not None
         except Exception:
             return False
 
-    def call_tool(self, tool_json: str, input: Dict[str, Any], **kwargs: Any) -> str:
+    def call_tool(self, tool_json: str, run_context: Dict[str, Any]) -> str:
         """Call a tool based on JSON command."""
         try:
             command = json.loads(tool_json)
@@ -219,19 +153,21 @@ class ToolEnv(MultiStepEnv):
             tool_args = command.get("args", {})
 
             # Call the tool function with arguments
-            result = tool_func(**tool_args, run_context=dict(input=input))
+            result = tool_func(**tool_args, run_context=run_context)
             return str(result)
         except json.JSONDecodeError:
             return "Error: Invalid JSON format"
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def env_response(self, messages: List[Dict[str, str]], input: Dict[str, Any], **kwargs: Any) -> Dict[str, str]:
+    def env_response(self, state: State, **kwargs: Any) -> Dict[str, str]:
+        run_context = dict(input=state["input"])
+        messages = state["messages"]
         try:
             parsed = self.llm_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)
             if hasattr(parsed, "tool") and parsed.tool is not None:
-                result = self.call_tool(parsed.tool, input=input)
+                result = self.call_tool(parsed.tool, run_context=run_context)
                 if len(result.strip()) > 0:
                     return {
                         "role": "tool",
@@ -248,3 +184,68 @@ class ToolEnv(MultiStepEnv):
             "role": "user",
             "content": "Error: Tool command not found or invalid XML format. Please ensure correct formatting.",
         }
+
+
+def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
+    """Infers a tool schema from a function's signature and docstring."""
+    sig = inspect.signature(func)
+    doc = dedent(inspect.getdoc(func) or "")
+
+    # Parse docstring sections
+    doc_parts = doc.split("\n\n")
+    description = doc_parts[0].strip()
+
+    # Extract examples if present
+    examples = []
+    for part in doc_parts:
+        part = part.strip()
+        if part.startswith("Examples:"):
+            examples = [line.strip() for line in part.split("\n")[1:] if line.strip()]
+
+    # Build args schema
+    args = {}
+    for name, param in sig.parameters.items():
+        if name == "kwargs" or name == "run_context":
+            continue
+        param_doc = ""
+        for part in doc_parts:
+            if part.strip().startswith("Args:"):
+                for line in part.split("\n")[1:]:
+                    if line.strip().startswith(f"{name}:"):
+                        param_doc = line.strip()[len(name) + 1 :].strip()
+
+        args[name] = {
+            "type": str(param.annotation.__name__ if param.annotation != inspect.Parameter.empty else "any"),
+            "description": param_doc,
+        }
+        if param.default != inspect.Parameter.empty:
+            args[name]["default"] = param.default
+
+    return {
+        "name": func.__name__,
+        "description": description,
+        "args": args,
+        "returns": str(sig.return_annotation.__name__ if sig.return_annotation != inspect.Parameter.empty else "any"),
+        "examples": examples,
+    }
+
+
+def format_tool_descriptions(schemas: List[Dict[str, Any]]) -> str:
+    """Formats tool schemas into a user-friendly description string."""
+    descriptions = []
+    for schema in schemas:
+        desc = [f"{schema['name']}: {schema['description']}"]
+
+        desc.append("\nArguments:")
+        for arg_name, arg_info in schema["args"].items():
+            default = f" (default: {arg_info['default']})" if "default" in arg_info else ""
+            desc.append(f"  - {arg_name}: {arg_info['description']}{default}")
+
+        if schema["examples"]:
+            desc.append("\nExamples:")
+            for example in schema["examples"]:
+                desc.append(f"  {example}")
+
+        descriptions.append("\n".join(desc))
+
+    return "\n\n".join(descriptions)

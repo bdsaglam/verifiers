@@ -6,7 +6,7 @@ from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.codex.models import CodeExecutor
 from verifiers.datasets.utils import prepare_dataset_for_env
-from verifiers.envs.multistep_env import MultiStepEnv
+from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import CODE_FEW_SHOT, CODE_PROMPT
 from verifiers.rubrics import CodeRubric
@@ -113,14 +113,14 @@ class CodeEnv(MultiStepEnv):
                     pass
         return step_count
 
-    def is_completed(self, messages: List[Dict[str, str]], **kwargs: Any) -> bool:
+    def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         # Check if we've hit max steps by counting code executions in the message history
+        messages = state["messages"]
         step_count = self._get_step_count(messages)
         if step_count >= self.max_steps:
             return True
 
         # Check if the completion output stopped because of a code execution
-        completion_output = kwargs["completion_output"]
         if completion_output.stop_reason not in self.special_stop_tokens:
             return True
 
@@ -131,14 +131,15 @@ class CodeEnv(MultiStepEnv):
         except Exception:
             return False
 
-    def run_code(self, code: str, **kwargs: Any) -> str:
+    def run_code(self, code: str) -> str:
         try:
             return self.code_executor.execute(code, timeout=10)
         except Exception as e:
             log.warning(f"Code execution failed: {e}")
             return "Error: Code execution failed"
 
-    def env_response(self, messages: List[Dict[str, str]], **kwargs: Any) -> Dict[str, str]:
+    def env_response(self, state: State, **kwargs: Any) -> Dict[str, str]:
+        messages = state["messages"]
         try:
             parsed = self.llm_parser.parse(messages[-1]["content"])
             # Check if we got a valid code field (not just None from failed parsing)

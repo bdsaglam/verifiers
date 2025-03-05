@@ -1,13 +1,21 @@
-import json
 from abc import abstractmethod
-from typing import Any, Dict, List, Sequence, Union
+from typing import Any, Dict, List, Sequence, TypedDict, Union
 
 from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.environment import Environment
 
-from ..imports import LLM, SamplingParams  # type: ignore
+from ..imports import LLM, SamplingParams, CompletionOutput  # type: ignore
+
+
+class State(TypedDict):
+    messages: List[Dict[str, str]]
+    n_prompt_messages: int
+    input: Dict[str, Any]
+    prompt_ids: List[int]
+    completed: bool
+    completion_ids: List[int]
 
 
 class MultiStepEnv(Environment):
@@ -37,14 +45,13 @@ class MultiStepEnv(Environment):
         pass
 
     @abstractmethod
-    def is_completed(self, messages: List[Dict[str, str]], **kwargs: Any) -> bool:
+    def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         pass
 
     @abstractmethod
     def env_response(
         self,
-        messages: List[Dict[str, str]],
-        input: Dict[str, Any],
+        state: State,
         **kwargs: Any,
     ) -> Dict[str, str]:
         pass
@@ -89,7 +96,7 @@ class MultiStepEnv(Environment):
                 states[j]["completion_ids"] = states[j]["completion_ids"][: sampling_params.max_tokens]
                 states[j]["completion_mask"] = states[j]["completion_mask"][: sampling_params.max_tokens]
             else:
-                states[j]["messages"].append(self.env_response(states[j]["messages"], input=states[j]["input"]))
+                states[j]["messages"].append(self.env_response(states[j]))
 
             assert len(states[j]["completion_mask"]) == len(states[j]["completion_ids"])
 
