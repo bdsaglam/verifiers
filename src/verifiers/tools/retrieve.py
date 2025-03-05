@@ -62,7 +62,7 @@ def make_reranker_retriever(name: str = "t5", top_k: int = 3) -> Callable:
     return retrieve
 
 
-def make_retrieve_tool(name: str = "golden", top_k: int = 3) -> Callable:
+def make_retrieve_tool(name: str = "bm25", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
     elif name == "bm25":
@@ -72,10 +72,10 @@ def make_retrieve_tool(name: str = "golden", top_k: int = 3) -> Callable:
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
-    def retrieve(query: str, **kwargs) -> list[str]:
+    def retrieve(query: str, **kwargs) -> str:
         """Find relevant documents for the query."""
-        docs = kwargs['run_context']['input']["docs"]
+        docs = kwargs["run_context"]["input"]["docs"]
         retrieved_docs = retriever(docs, query)
-        return [x["text"] for x in retrieved_docs]
+        return "\n\n".join([x["text"] for x in retrieved_docs])
 
     return retrieve

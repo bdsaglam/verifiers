@@ -51,15 +51,16 @@ def create_environment(
     """
     log.info("Initializing ToolEnv environment")
     from verifiers.envs.tool_env import ToolEnv
-    from verifiers.prompts import TOOL_FEW_SHOT
+    from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
     from verifiers.tools import make_retrieve_tool
 
     vf_env = ToolEnv(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        few_shot=TOOL_FEW_SHOT[0],
-        tools=[make_retrieve_tool()],
+        few_shot=RETRIEVE_FEW_SHOT[0],
+        tools=[make_retrieve_tool(top_k=2)],
+        system_prompt=QA_TOOL_PROMPT_TEMPLATE,
     )
 
     return vf_env
@@ -76,11 +77,11 @@ def train(
     model_name: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
     dataset_path: str = typer.Option("bdsaglam/musique"),
     dataset_name: str = typer.Option("answerable"),
-    dataset_split: str = typer.Option("train[:128]"),
+    dataset_split: str = typer.Option("train"),
     eval_dataset_path: str = typer.Option("bdsaglam/musique"),
     eval_dataset_name: str = typer.Option("answerable"),
     eval_dataset_split: str = typer.Option("validation[:32]"),
-    max_prompt_length: int = typer.Option(2048, "-pl"),
+    max_prompt_length: int = typer.Option(4096, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
     num_generations: int = typer.Option(4, "-g", help="Number of generations per prompt"),
     batch_size: int = typer.Option(16, "-bs", help="Per device batch size"),

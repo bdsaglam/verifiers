@@ -180,7 +180,9 @@ SEARCH_FEW_SHOT = [
             "role": "assistant",
             "content": tool_parser.format(
                 reasoning="I need to understand what mechanical weathering is and which of these options matches that phenomenon. Let me search for information about mechanical weathering.",
-                tool=json.dumps({"name": "search", "args": {"query": "what is mechanical weathering examples", "num_results": 3}}),
+                tool=json.dumps(
+                    {"name": "search", "args": {"query": "what is mechanical weathering examples", "num_results": 3}}
+                ),
             ),
         },
         {
@@ -250,4 +252,46 @@ CALCULATOR_FEW_SHOT = [
             ),
         },
     ],
+]
+
+RETRIEVE_FEW_SHOT = [
+    [
+        {
+            "role": "user",
+            "content": "Which country was the inventor of alternative current born?",
+        },
+        {
+            "role": "assistant",
+            "content": tool_parser.format(
+                reasoning="First, I need to find the inventor of alternative current.",
+                tool=json.dumps({"name": "retrieve", "args": {"query": "inventor of alternative current"}}),
+            ),
+        },
+        {
+            "role": "tool",
+            "content": result_parser.format(
+                result="Nikola Tesla developed polyphase alternating current system of generators, motors and transformers and held 40 basic U.S. patents on the system, which George Westinghouse bought, determined to supply America with the Tesla system."
+            ),
+        },
+        {
+            "role": "assistant",
+            "content": tool_parser.format(
+                reasoning="Now I need to find where Nikola Tesla was born.",
+                tool=json.dumps({"name": "retrieve", "args": {"query": "country birth place of Nikola Tesla"}}),
+            ),
+        },
+        {
+            "role": "tool",
+            "content": result_parser.format(
+                result="Nikola Tesla was born on July 9, 1856, in Smiljan, a village in rural Croatia, then part of the Austro-Hungarian empire. He was the son of a Serbian Orthodox priest who was a notable preacher, and a clever and inventive, though uneducated, mother."
+            ),
+        },
+        {
+            "role": "assistant",
+            "content": answer_parser.format(
+                reasoning="Nikola Tesla was born in Croatia.",
+                answer="Croatia",
+            ),
+        },
+    ]
 ]

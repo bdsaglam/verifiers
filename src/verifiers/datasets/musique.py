@@ -4,7 +4,7 @@ from datasets import Dataset
 def _make_doc(p: dict) -> dict:
     return {
         "id": p["idx"],
-        "text": p["title"] + "\n" + p["paragraph_text"],
+        "text": f"# {p['title']}\n{p['paragraph_text']}", 
         "is_supporting": p["is_supporting"],
     }
 
