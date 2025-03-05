@@ -6,7 +6,7 @@ from websocket import create_connection
 from verifiers.codex.models import CodeExecutor
 
 
-class DockerExecutor(CodeExecutor):
+class DockerPythonExecutor(CodeExecutor):
     """
     Executes Python code using Jupyter Kernel Gateway in a Docker container.
     Assumes the Jupyter Kernel Gateway service is already running via docker-compose.
@@ -15,7 +15,7 @@ class DockerExecutor(CodeExecutor):
     def __init__(
         self,
         host: str = "127.0.0.1",
-        port: int = 9999,
+        port: int = 8888,
     ):
         """
         Initialize connection to Jupyter Kernel Gateway.

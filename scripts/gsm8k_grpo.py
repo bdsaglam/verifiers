@@ -53,9 +53,10 @@ def create_environment(
     """
     if env_type.lower() == "code":
         from verifiers.codex.e2b import E2BPythonExecutor
+        from verifiers.codex.docker import DockerPythonExecutor
 
         log.info("Initializing CodeEnv environment")
-        code_executor = E2BPythonExecutor()
+        code_executor = DockerPythonExecutor()
         vf_env = vf.CodeEnv(
             code_executor=code_executor,
             train_dataset=train_dataset,

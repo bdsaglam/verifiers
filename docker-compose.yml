@@ -6,9 +6,9 @@ services:
       context: ./src/verifiers/codex
       dockerfile: Dockerfile
     ports:
-      - "9999:9999"
+      - "8888:8888"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9999/api/kernels"]
+      test: ["CMD", "curl", "-f", "http://localhost:8888/api/kernels"]
       interval: 10s
       timeout: 5s
       retries: 3 
