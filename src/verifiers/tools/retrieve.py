@@ -74,7 +74,7 @@ def make_retrieve_tool(name: str = "golden", top_k: int = 3) -> Callable:
 
     def retrieve(query: str, **kwargs) -> list[str]:
         """Find relevant documents for the query."""
-        docs = kwargs["docs"]
+        docs = kwargs['run_context']['input']["docs"]
         retrieved_docs = retriever(docs, query)
         return [x["text"] for x in retrieved_docs]
 
