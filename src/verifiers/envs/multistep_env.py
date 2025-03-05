@@ -6,7 +6,7 @@ from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.environment import Environment
 
-from ..imports import LLM, SamplingParams, CompletionOutput  # type: ignore
+from ..imports import LLM, CompletionOutput, SamplingParams  # type: ignore
 
 
 class State(TypedDict):
@@ -86,10 +86,7 @@ class MultiStepEnv(Environment):
             states[j]["completion_ids"] = states[j]["completion_ids"][len(states[j]["prompt_ids"]) :]
 
             if (
-                self.is_completed(
-                    states[j]["messages"],
-                    completion_output=llm_responses[i].outputs[0],
-                )
+                self.is_completed(states[j], completion_output=llm_responses[i].outputs[0])
                 or len(states[j]["completion_ids"]) > sampling_params.max_tokens
             ):  # type: ignore
                 states[j]["completed"] = True

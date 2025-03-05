@@ -114,8 +114,9 @@ class CodeEnv(MultiStepEnv):
         return step_count
 
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
-        # Check if we've hit max steps by counting code executions in the message history
         messages = state["messages"]
+
+        # Check if we've hit max steps by counting code executions in the message history
         step_count = self._get_step_count(messages)
         if step_count >= self.max_steps:
             return True

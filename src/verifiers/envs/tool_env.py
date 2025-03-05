@@ -119,8 +119,10 @@ class ToolEnv(MultiStepEnv):
         return step_count
 
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
+        messages = state["messages"]
+
         # Check if we've hit max steps by counting tool uses in the message history
-        step_count = self._get_step_count(state["messages"])
+        step_count = self._get_step_count(messages)
         if step_count >= self.max_steps:
             return True
 
@@ -129,7 +131,7 @@ class ToolEnv(MultiStepEnv):
             return True
 
         try:
-            parsed = self.llm_parser.parse(state["messages"][-1]["content"])
+            parsed = self.llm_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
             return hasattr(parsed, "answer") and parsed.answer is not None
         except Exception:
