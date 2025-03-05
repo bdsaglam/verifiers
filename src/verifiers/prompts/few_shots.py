@@ -43,7 +43,7 @@ CODE_FEW_SHOT = [
                 code="print(sum(range(2, 102, 2)))",
             ),
         },
-        {"role": "user", "content": output_parser.format(output="2550")},
+        {"role": "tool", "content": output_parser.format(output="2550")},
         {"role": "assistant", "content": code_parser.format(reasoning="The answer is 2550.", answer="2550")},
         {
             "role": "user",
@@ -56,7 +56,7 @@ CODE_FEW_SHOT = [
                 code="print(100*101/2)",
             ),
         },
-        {"role": "user", "content": output_parser.format(output="5050")},
+        {"role": "tool", "content": output_parser.format(output="5050")},
         {
             "role": "assistant",
             "content": code_parser.format(
@@ -64,7 +64,7 @@ CODE_FEW_SHOT = [
                 code="print(5050 - 97)",
             ),
         },
-        {"role": "user", "content": output_parser.format(output="4953")},
+        {"role": "tool", "content": output_parser.format(output="4953")},
         {
             "role": "assistant",
             "content": code_parser.format(
@@ -89,7 +89,7 @@ TOOL_FEW_SHOT = [
                 tool="pwd",
             ),
         },
-        {"role": "user", "content": result_parser.format(result="/Users/user/project")},
+        {"role": "tool", "content": result_parser.format(result="/Users/user/project")},
         {
             "role": "assistant",
             "content": answer_parser.format(
@@ -105,7 +105,7 @@ TOOL_FEW_SHOT = [
                 tool='find . -name "*.py" | wc -l',
             ),
         },
-        {"role": "user", "content": result_parser.format(result="42")},
+        {"role": "tool", "content": result_parser.format(result="42")},
         {
             "role": "assistant",
             "content": answer_parser.format(
@@ -127,7 +127,7 @@ COMMONSENSE_FEW_SHOT = [
             ),
         },
         {
-            "role": "user",
+            "role": "tool",
             "content": result_parser.format(
                 result="""{
   "difference": -4,
@@ -152,7 +152,7 @@ COMMONSENSE_FEW_SHOT = [
             ),
         },
         {
-            "role": "user",
+            "role": "tool",
             "content": result_parser.format(
                 result="""{
   "properties": ["metallic", "fast", "loud", "heavy"],
@@ -184,7 +184,7 @@ SEARCH_FEW_SHOT = [
             ),
         },
         {
-            "role": "user",
+            "role": "tool",
             "content": result_parser.format(
                 result="• Mechanical Weathering - Definition, Processes and Types\n  Mechanical weathering, also known as physical weathering, is the process by which rocks are broken down into smaller pieces by external forces. Examples include frost wedging (when water freezes and expands in cracks), thermal expansion/contraction, and pressure release.\n\n• Mechanical and Chemical Weathering - Earth Science\n  Mechanical weathering breaks rocks into smaller pieces without changing their composition. Ice wedging occurs when water gets into cracks, freezes, and expands, breaking the rock apart. Other forms include plant root growth, animal activity, and abrasion.\n\n• Mechanical Weathering: Definition, Types, Examples - Geology Science\n  Types of mechanical weathering include frost wedging, salt crystallization, thermal expansion, plant activity, and animal activity. The most common mechanical weathering process in cold climates is frost wedging, where water enters rock cracks, freezes, and expands."
             ),
