@@ -1,5 +1,6 @@
 import inspect
 import json
+from textwrap import dedent
 from typing import Any, Callable, Dict, List
 
 from datasets import Dataset
@@ -15,7 +16,7 @@ from verifiers.rubrics import ToolRubric
 def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
     """Infers a tool schema from a function's signature and docstring."""
     sig = inspect.signature(func)
-    doc = inspect.getdoc(func) or ""
+    doc = dedent(inspect.getdoc(func) or "")
 
     # Parse docstring sections
     doc_parts = doc.split("\n\n")
@@ -24,12 +25,15 @@ def infer_schema_from_function(func: Callable) -> Dict[str, Any]:
     # Extract examples if present
     examples = []
     for part in doc_parts:
+        part = part.strip()
         if part.startswith("Examples:"):
             examples = [line.strip() for line in part.split("\n")[1:] if line.strip()]
 
     # Build args schema
     args = {}
     for name, param in sig.parameters.items():
+        if name == "kwargs" or name == "run_context":
+            continue
         param_doc = ""
         for part in doc_parts:
             if part.strip().startswith("Args:"):
@@ -123,7 +127,7 @@ class ToolEnv(MultiStepEnv):
         # Format the system prompt with tool descriptions
         tool_descriptions = format_tool_descriptions(self.tool_schemas)
         formatted_prompt = system_prompt.format(tool_descriptions=tool_descriptions)
-  
+
         self.dataset = prepare_dataset_for_env(
             dataset=train_dataset,
             system_prompt=formatted_prompt,
@@ -197,7 +201,7 @@ class ToolEnv(MultiStepEnv):
         except Exception:
             return False
 
-    def call_tool(self, tool_json: str, **kwargs: Any) -> str:
+    def call_tool(self, tool_json: str, input: Dict[str, Any], **kwargs: Any) -> str:
         """Call a tool based on JSON command."""
         try:
             command = json.loads(tool_json)
@@ -215,19 +219,19 @@ class ToolEnv(MultiStepEnv):
             tool_args = command.get("args", {})
 
             # Call the tool function with arguments
-            result = tool_func(**tool_args)
+            result = tool_func(**tool_args, run_context=dict(input=input))
             return str(result)
         except json.JSONDecodeError:
             return "Error: Invalid JSON format"
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def env_response(self, messages: List[Dict[str, str]], **kwargs: Any) -> Dict[str, str]:
+    def env_response(self, messages: List[Dict[str, str]], input: Dict[str, Any], **kwargs: Any) -> Dict[str, str]:
         try:
             parsed = self.llm_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)
             if hasattr(parsed, "tool") and parsed.tool is not None:
-                result = self.call_tool(parsed.tool)
+                result = self.call_tool(parsed.tool, input=input)
                 if len(result.strip()) > 0:
                     return {
                         "role": "tool",

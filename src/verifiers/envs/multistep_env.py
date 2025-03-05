@@ -42,33 +42,31 @@ class MultiStepEnv(Environment):
 
     @abstractmethod
     def env_response(
-        self, messages: List[Dict[str, str]], **kwargs: Any
+        self,
+        messages: List[Dict[str, str]],
+        input: Dict[str, Any],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         pass
 
     def step(
-        self, states: List[Dict[str, Any]], llm: LLM, sampling_params: SamplingParams
+        self,
+        states: List[Dict[str, Any]],
+        llm: LLM,
+        sampling_params: SamplingParams,
     ) -> List[Dict[str, Any]]:
         live_indices = [i for i, s in enumerate(states) if not s["completed"]]
         messages_to_step = [states[i]["messages"] for i in live_indices]
-        llm_responses = llm.chat(
-            messages_to_step, sampling_params=sampling_params, use_tqdm=False
-        )  # type: ignore
+        llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False)  # type: ignore
 
         for i, j in enumerate(live_indices):
             if len(states[j]["prompt_ids"]) == 0:
                 states[j]["prompt_ids"] = llm_responses[i].prompt_token_ids
-            states[j]["messages"].append(
-                {"role": "assistant", "content": llm_responses[i].outputs[0].text}
-            )
+            states[j]["messages"].append({"role": "assistant", "content": llm_responses[i].outputs[0].text})
 
             # get token lengths of env response and new completion
-            total_prev_len = len(states[j]["prompt_ids"]) + len(
-                states[j]["completion_ids"]
-            )
-            env_response_len = (
-                len(list(llm_responses[i].prompt_token_ids)) - total_prev_len
-            )  # type: ignore
+            total_prev_len = len(states[j]["prompt_ids"]) + len(states[j]["completion_ids"])
+            env_response_len = len(list(llm_responses[i].prompt_token_ids)) - total_prev_len  # type: ignore
             new_completion_len = len(llm_responses[i].outputs[0].token_ids)
 
             # update completion masks
@@ -77,12 +75,8 @@ class MultiStepEnv(Environment):
 
             # update completion ids
             states[j]["completion_ids"] = list(llm_responses[i].prompt_token_ids)  # type: ignore
-            states[j]["completion_ids"].extend(
-                list(llm_responses[i].outputs[0].token_ids)
-            )
-            states[j]["completion_ids"] = states[j]["completion_ids"][
-                len(states[j]["prompt_ids"]) :
-            ]
+            states[j]["completion_ids"].extend(list(llm_responses[i].outputs[0].token_ids))
+            states[j]["completion_ids"] = states[j]["completion_ids"][len(states[j]["prompt_ids"]) :]
 
             if (
                 self.is_completed(
@@ -92,14 +86,10 @@ class MultiStepEnv(Environment):
                 or len(states[j]["completion_ids"]) > sampling_params.max_tokens
             ):  # type: ignore
                 states[j]["completed"] = True
-                states[j]["completion_ids"] = states[j]["completion_ids"][
-                    : sampling_params.max_tokens
-                ]
-                states[j]["completion_mask"] = states[j]["completion_mask"][
-                    : sampling_params.max_tokens
-                ]
+                states[j]["completion_ids"] = states[j]["completion_ids"][: sampling_params.max_tokens]
+                states[j]["completion_mask"] = states[j]["completion_mask"][: sampling_params.max_tokens]
             else:
-                states[j]["messages"].append(self.env_response(states[j]["messages"]))
+                states[j]["messages"].append(self.env_response(states[j]["messages"], input=states[j]["input"]))
 
             assert len(states[j]["completion_mask"]) == len(states[j]["completion_ids"])
 
@@ -110,6 +100,7 @@ class MultiStepEnv(Environment):
         prompts: List[List[Dict[str, Any]]],
         llm: LLM,
         sampling_params: SamplingParams,
+        inputs: List[Dict[str, Any]],
         **kwargs: Any,
     ) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
         custom_sp = sampling_params.clone()
@@ -121,13 +112,14 @@ class MultiStepEnv(Environment):
         states = [
             {
                 "messages": m,
-                "prompt_messages": len(m),
+                "n_prompt_messages": len(m),
+                "input": input,
                 "prompt_ids": [],
                 "completed": False,
                 "completion_ids": [],
                 "completion_mask": [],
             }
-            for m in prompts
+            for m, input in zip(prompts, inputs)
         ]
 
         # main loop
@@ -135,7 +127,7 @@ class MultiStepEnv(Environment):
             states = self.step(states, llm, custom_sp)
             all_completed = all(state["completed"] for state in states)
 
-        completion_messages = [s["messages"][s["prompt_messages"] :] for s in states]
+        completion_messages = [s["messages"][s["n_prompt_messages"] :] for s in states]
         completion_ids = [s["completion_ids"] for s in states]
         completion_mask = [s["completion_mask"] for s in states]
         output = {
