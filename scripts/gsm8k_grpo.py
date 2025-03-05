@@ -52,8 +52,12 @@ def create_environment(
         A tuple containing the initialized environment and a default suffix for run naming
     """
     if env_type.lower() == "code":
+        from verifiers.codex.e2b import E2BPythonExecutor
+
         log.info("Initializing CodeEnv environment")
+        code_executor = E2BPythonExecutor()
         vf_env = vf.CodeEnv(
+            code_executor=code_executor,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             tokenizer=tokenizer,
@@ -88,10 +92,10 @@ def train(
     env_type: str = typer.Option("code", "--env", help="Environment type: 'code' or 'tool'"),
     dataset_path: str = typer.Option("openai/gsm8k"),
     dataset_name: str = typer.Option("main"),
-    dataset_split: str = typer.Option("train"),
+    dataset_split: str = typer.Option("train[:128]"),
     eval_dataset_path: str = typer.Option("openai/gsm8k"),
     eval_dataset_name: str = typer.Option("main"),
-    eval_dataset_split: str = typer.Option("test[:128]"),
+    eval_dataset_split: str = typer.Option("test[:32]"),
     max_prompt_length: int = typer.Option(1024, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
     num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
@@ -131,7 +135,7 @@ def train(
     )
 
     # Use provided suffix or default based on env_type
-    run_name = f"{env_type}-{model_name.split('/')[-1]}-{dataset_path.split('/')[-1]}"
+    run_name = f"{env_type}-{model_name.split('/')[-1]}-{dataset_path.split('/')[-1]}-{suffix}"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
