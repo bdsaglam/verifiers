@@ -37,6 +37,7 @@ def create_environment(
     train_dataset: Dataset,
     eval_dataset: Dataset,
     tokenizer: Any,
+    retriever: str,
 ):
     """
     Create and initialize the appropriate environment based on the specified type.
@@ -59,7 +60,7 @@ def create_environment(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         few_shot=RETRIEVE_FEW_SHOT[0],
-        tools=[make_retrieve_tool(top_k=2)],
+        tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
     )
 
@@ -92,6 +93,7 @@ def train(
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
     suffix: str = typer.Option("grpo", "--suffix", help="Custom suffix for the run name"),
+    retriever: str = typer.Option("bm25", "--retriever", help="Retriever to use"),
 ):
     """Train a model using GRPO for code generation or tool use."""
 
@@ -116,6 +118,7 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
+        retriever=retriever,
     )
 
     # Use provided suffix or default based on env_type

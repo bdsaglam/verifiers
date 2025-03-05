@@ -73,7 +73,7 @@ def make_retrieve_tool(name: str = "bm25", top_k: int = 3) -> Callable:
         raise ValueError(f"Invalid retriever name: {name}")
 
     def retrieve(query: str, **kwargs) -> str:
-        """Find relevant documents for the query."""
+        """Search for relevant documents by the query. The results become better if the query is more specific."""
         docs = kwargs["run_context"]["input"]["docs"]
         retrieved_docs = retriever(docs, query)
         return "\n\n".join([x["text"] for x in retrieved_docs])

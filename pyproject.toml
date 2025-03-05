@@ -33,5 +33,5 @@ dev = [
 retrieve = [
     "bm25s[full]",
     "pystemmer",
-    "rerankers[transformers]",
+    "rerankers[transformers]==0.7.0",
 ]
