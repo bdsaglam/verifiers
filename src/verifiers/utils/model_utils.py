@@ -33,10 +33,10 @@ def get_tokenizer(model_name: str) -> Any:
             tokenizer = AutoTokenizer.from_pretrained(model_name + "-Instruct")
         except Exception:
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-    if not hasattr(tokenizer, "pad_token"):
+    if not getattr(tokenizer, "pad_token", None):
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
-    if not hasattr(tokenizer, "chat_template"):
+    if not getattr(tokenizer, "chat_template", None):
         raise ValueError(
             f"Tokenizer for model {model_name} does not have chat_template attribute, \
                             and could not find a tokenizer with the same name as the model with suffix \
