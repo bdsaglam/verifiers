@@ -10,7 +10,6 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
-from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
 
 load_dotenv()
 
@@ -24,8 +23,8 @@ accelerator = Accelerator()
 def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
     ds = load_dataset(dataset_path, dataset_name, split=split)
 
-    if "gsm8k" in dataset_path:
-        from verifiers.datasets.gsm8k import preprocess_dataset
+    if "musique" in dataset_path:
+        from verifiers.datasets.musique import preprocess_dataset
 
         ds = preprocess_dataset(ds)
     else:
@@ -35,7 +34,6 @@ def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset
 
 
 def create_environment(
-    env_type: str,
     train_dataset: Dataset,
     eval_dataset: Dataset,
     tokenizer: Any,
@@ -44,7 +42,6 @@ def create_environment(
     Create and initialize the appropriate environment based on the specified type.
 
     Args:
-        env_type: Type of environment to create ('code' or 'tool')
         train_dataset: Dataset for training
         eval_dataset: Dataset for evaluation
         tokenizer: Tokenizer instance
@@ -52,33 +49,18 @@ def create_environment(
     Returns:
         A tuple containing the initialized environment and a default suffix for run naming
     """
-    if env_type.lower() == "code":
-        from verifiers.codex.docker import DockerPythonExecutor
-        # from verifiers.codex.e2b import E2BPythonExecutor
-        # from verifiers.codex.local import LocalPythonExecutor
+    log.info("Initializing ToolEnv environment")
+    from verifiers.envs.tool_env import ToolEnv
+    from verifiers.prompts import TOOL_FEW_SHOT
+    from verifiers.tools import make_retrieve_tool
 
-        log.info("Initializing CodeEnv environment")
-        code_executor = DockerPythonExecutor()
-        vf_env = vf.CodeEnv(
-            code_executor=code_executor,
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset,
-            tokenizer=tokenizer,
-            few_shot=CODE_FEW_SHOT[0],
-        )
-    elif env_type.lower() == "tool":
-        log.info("Initializing ToolEnv environment")
-        from verifiers.tools import calculator
-
-        vf_env = vf.ToolEnv(
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset,
-            tokenizer=tokenizer,
-            few_shot=CALCULATOR_FEW_SHOT[0],
-            tools=[calculator],
-        )
-    else:
-        raise ValueError(f"Unknown environment type: {env_type}. Choose 'code' or 'tool'.")
+    vf_env = ToolEnv(
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        tokenizer=tokenizer,
+        few_shot=TOOL_FEW_SHOT[0],
+        tools=[make_retrieve_tool()],
+    )
 
     return vf_env
 
@@ -92,18 +74,17 @@ def save_artifacts(model, tokenizer, model_id: str, hub_dir: Path):
 @app.command("train")
 def train(
     model_name: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
-    env_type: str = typer.Option("code", "--env", help="Environment type: 'code' or 'tool'"),
-    dataset_path: str = typer.Option("openai/gsm8k"),
-    dataset_name: str = typer.Option("main"),
-    dataset_split: str = typer.Option("train"),
-    eval_dataset_path: str = typer.Option("openai/gsm8k"),
-    eval_dataset_name: str = typer.Option("main"),
-    eval_dataset_split: str = typer.Option("test[:32]"),
-    max_prompt_length: int = typer.Option(1024, "-pl"),
+    dataset_path: str = typer.Option("bdsaglam/musique"),
+    dataset_name: str = typer.Option("answerable"),
+    dataset_split: str = typer.Option("train[:128]"),
+    eval_dataset_path: str = typer.Option("bdsaglam/musique"),
+    eval_dataset_name: str = typer.Option("answerable"),
+    eval_dataset_split: str = typer.Option("validation[:32]"),
+    max_prompt_length: int = typer.Option(2048, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
-    num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
-    batch_size: int = typer.Option(32, "-bs", help="Per device batch size"),
-    gradient_accumulation_steps: int = typer.Option(1, "-gacc"),
+    num_generations: int = typer.Option(4, "-g", help="Number of generations per prompt"),
+    batch_size: int = typer.Option(16, "-bs", help="Per device batch size"),
+    gradient_accumulation_steps: int = typer.Option(2, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
     eval_steps: int = typer.Option(100, "--eval-steps"),
@@ -131,14 +112,13 @@ def train(
 
     # Initialize environment based on env_type
     vf_env = create_environment(
-        env_type=env_type,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
     )
 
     # Use provided suffix or default based on env_type
-    run_name = f"{env_type}-{model_name.split('/')[-1]}-{dataset_path.split('/')[-1]}-{suffix}"
+    run_name = f"tool-{model_name.split('/')[-1]}-{dataset_path.split('/')[-1]}-{suffix}"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
