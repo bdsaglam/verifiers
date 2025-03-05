@@ -50,6 +50,7 @@ class CodeEnv(MultiStepEnv):
         super().__init__(
             mask_env_response=mask_env_response,
             sampling_args=sampling_args,
+            max_steps=max_steps,
             **kwargs,
         )
 
@@ -74,7 +75,6 @@ class CodeEnv(MultiStepEnv):
             if eval_dataset
             else None
         )
-        self.max_steps = max_steps
         self.llm_parser = XMLParser(fields=["reasoning", ("code", "answer")])
         self.env_parser = XMLParser(fields=["output"])
         self.rubric = CodeRubric(parser=self.llm_parser, env_parser=self.env_parser)
@@ -90,36 +90,8 @@ class CodeEnv(MultiStepEnv):
     def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
         return self.rubric.get_reward_funcs()
 
-    def _get_step_count(self, messages: List[Dict[str, str]]) -> int:
-        """Count the number of code executions in the message history, excluding few-shot examples."""
-        step_count = 0
-
-        # Skip messages that are part of few-shot examples
-        # We need to determine where the actual conversation starts
-        # System message + few-shot examples + user query = start of actual conversation
-        conversation_start = 1  # Start after system message
-        if self.few_shot:
-            # Account for all few-shot messages
-            conversation_start += len(self.few_shot)
-
-        # Only count code executions from the actual conversation
-        for message in messages[conversation_start:]:
-            if message.get("role") == "assistant":
-                try:
-                    parsed = self.llm_parser.parse(message["content"])
-                    if hasattr(parsed, "code") and parsed.code is not None:
-                        step_count += 1
-                except Exception:
-                    pass
-        return step_count
-
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         messages = state["messages"]
-
-        # Check if we've hit max steps by counting code executions in the message history
-        step_count = self._get_step_count(messages)
-        if step_count >= self.max_steps:
-            return True
 
         # Check if the completion output stopped because of a code execution
         if completion_output.stop_reason not in self.special_stop_tokens:

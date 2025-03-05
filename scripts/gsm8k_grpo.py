@@ -76,6 +76,7 @@ def create_environment(
             tokenizer=tokenizer,
             few_shot=CALCULATOR_FEW_SHOT[0],
             tools=[calculator],
+            max_steps=1,
         )
     else:
         raise ValueError(f"Unknown environment type: {env_type}. Choose 'code' or 'tool'.")

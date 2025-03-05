@@ -24,7 +24,6 @@ class ToolEnv(MultiStepEnv):
         few_shot: List[Dict[str, str]] = [],
         additional_sampling_args={},
         mask_env_response: bool = True,
-        max_steps: int = 10,
         **kwargs,
     ):
         # Add stop tokens from the tokenizer
@@ -79,7 +78,6 @@ class ToolEnv(MultiStepEnv):
             if eval_dataset
             else None
         )
-        self.max_steps = max_steps
         self.rubric = ToolRubric()
         self.llm_parser = XMLParser(fields=["reasoning", ("tool", "answer")])
         self.env_parser = XMLParser(fields=["result"])
@@ -95,36 +93,8 @@ class ToolEnv(MultiStepEnv):
     def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
         return self.rubric.get_reward_funcs()
 
-    def _get_step_count(self, messages: List[Dict[str, str]]) -> int:
-        """Count the number of tool uses in the message history, excluding few-shot examples."""
-        step_count = 0
-
-        # Skip messages that are part of few-shot examples
-        # We need to determine where the actual conversation starts
-        # System message + few-shot examples + user query = start of actual conversation
-        conversation_start = 1  # Start after system message
-        if self.few_shot:
-            # Account for all few-shot messages
-            conversation_start += len(self.few_shot)
-
-        # Only count tool uses from the actual conversation
-        for message in messages[conversation_start:]:
-            if message.get("role") == "assistant":
-                try:
-                    parsed = self.llm_parser.parse(message["content"])
-                    if hasattr(parsed, "tool") and parsed.tool is not None:
-                        step_count += 1
-                except Exception:
-                    pass
-        return step_count
-
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         messages = state["messages"]
-
-        # Check if we've hit max steps by counting tool uses in the message history
-        step_count = self._get_step_count(messages)
-        if step_count >= self.max_steps:
-            return True
 
         # Check if the completion output stopped because of a tool call
         if completion_output.stop_reason not in self.special_stop_tokens:
