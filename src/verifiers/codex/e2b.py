@@ -1,4 +1,6 @@
 import os
+import json
+import yaml
 from typing import Optional
 
 from e2b_code_interpreter import Sandbox
@@ -33,10 +35,7 @@ class E2BPythonExecutor(CodeExecutor):
 
         with Sandbox(api_key=self.api_key) as sandbox:
             execution = sandbox.run_code(code, timeout=timeout)
-            if execution.error:
-                return str(execution.error)
-            else:
-                return execution.text
+            return yaml.safe_dump(json.loads(execution.to_json())).strip()
 
     def destroy(self, **kwargs) -> None:
         """

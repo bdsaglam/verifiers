@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  jupyter-kernel:
+    build:
+      context: ./src/verifiers/codex
+      dockerfile: Dockerfile
+    ports:
+      - "9999:9999"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9999/api/kernels"]
+      interval: 10s
+      timeout: 5s
+      retries: 3 

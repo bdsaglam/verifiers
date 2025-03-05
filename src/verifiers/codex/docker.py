@@ -1,8 +1,5 @@
 import json
 import time
-from pathlib import Path
-
-import docker
 import requests
 from websocket import create_connection
 
@@ -12,60 +9,24 @@ from verifiers.codex.models import CodeExecutor
 class DockerExecutor(CodeExecutor):
     """
     Executes Python code using Jupyter Kernel Gateway in a Docker container.
+    Assumes the Jupyter Kernel Gateway service is already running via docker-compose.
     """
 
     def __init__(
         self,
         host: str = "127.0.0.1",
-        port: int = 8888,
+        port: int = 9999,
     ):
         """
-        Initialize the Docker-based Jupyter Kernel Gateway executor.
+        Initialize connection to Jupyter Kernel Gateway.
         """
         self.host = host
         self.port = port
-        self.container = None
         self.kernel_id = None
         self.ws = None
-        self.base_url = None
+        self.base_url = f"http://{host}:{port}"
 
-        # Initialize Docker
         try:
-            self.client = docker.from_env()
-        except docker.errors.DockerException as e:
-            raise RuntimeError("Could not connect to Docker daemon: make sure Docker is running.") from e
-
-        # Build and start container
-        try:
-            dockerfile_path = Path(__file__).parent / "Dockerfile"
-            if not dockerfile_path.exists():
-                with open(dockerfile_path, "w") as f:
-                    f.write(
-                        """FROM python:3.12-slim
-
-RUN pip install jupyter_kernel_gateway requests numpy pandas
-RUN pip install jupyter_client notebook
-
-EXPOSE {port}
-CMD ["jupyter", "kernelgateway", "--KernelGatewayApp.ip='0.0.0.0'", "--KernelGatewayApp.port={port}", "--KernelGatewayApp.allow_origin='*'"]
-""".format(port=self.port)
-                    )
-            _, build_logs = self.client.images.build(
-                path=str(dockerfile_path.parent), dockerfile=str(dockerfile_path), tag="jupyter-kernel"
-            )
-
-            self.container = self.client.containers.run(
-                "jupyter-kernel", ports={f"{self.port}/tcp": (host, port)}, detach=True
-            )
-
-            retries = 0
-            while self.container.status != "running" and retries < 5:
-                time.sleep(1)
-                self.container.reload()
-                retries += 1
-
-            self.base_url = f"http://{host}:{port}"
-
             # Create new kernel via HTTP
             r = requests.post(f"{self.base_url}/api/kernels")
             if r.status_code != 201:
@@ -152,8 +113,5 @@ CMD ["jupyter", "kernelgateway", "--KernelGatewayApp.ip='0.0.0.0'", "--KernelGat
         try:
             if self.ws:
                 self.ws.close()
-            if self.container:
-                self.container.stop()
-                self.container.remove()
         except Exception as e:
             raise RuntimeError(f"Error during cleanup: {e}")
