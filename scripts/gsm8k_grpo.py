@@ -6,6 +6,7 @@ import typer
 from accelerate import Accelerator
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
+from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
@@ -52,11 +53,12 @@ def create_environment(
         A tuple containing the initialized environment and a default suffix for run naming
     """
     if env_type.lower() == "code":
-        from verifiers.codex.e2b import E2BPythonExecutor
         from verifiers.codex.docker import DockerPythonExecutor
+        from verifiers.codex.e2b import E2BPythonExecutor
+        from verifiers.codex.local import LocalPythonExecutor
 
         log.info("Initializing CodeEnv environment")
-        code_executor = DockerPythonExecutor()
+        code_executor = LocalPythonExecutor()
         vf_env = vf.CodeEnv(
             code_executor=code_executor,
             train_dataset=train_dataset,
@@ -173,10 +175,19 @@ def train(
         per_device_eval_batch_size=batch_size,
         eval_accumulation_steps=1,
     )
+    # Configure LoRA
+    peft_config = LoraConfig(
+        r=16,
+        lora_alpha=64,
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "up_proj", "down_proj", "gate_proj"],
+        task_type="CAUSAL_LM",
+        lora_dropout=0.05,
+    )
 
     # Initialize trainer
     trainer = vf.GRPOEnvTrainer(
         model=model,
+        peft_config=peft_config,
         env=vf_env,
         reward_funcs=vf_env.get_rubric(),
         processing_class=tokenizer,
