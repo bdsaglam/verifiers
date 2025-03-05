@@ -15,7 +15,7 @@ class DockerPythonExecutor(CodeExecutor):
     def __init__(
         self,
         host: str = "127.0.0.1",
-        port: int = 8888,
+        port: int = 9999,
     ):
         """
         Initialize connection to Jupyter Kernel Gateway.
@@ -84,7 +84,7 @@ class DockerPythonExecutor(CodeExecutor):
 
             while True:
                 if time.time() - start_time > timeout:
-                    raise TimeoutError(f"Code execution timed out after {timeout} seconds")
+                    return f"Error: Code execution timed out after {timeout} seconds"
 
                 msg = json.loads(self.ws.recv())
                 msg_type = msg.get("msg_type", "")
@@ -95,16 +95,18 @@ class DockerPythonExecutor(CodeExecutor):
 
                 if msg_type == "stream":
                     outputs.append(msg["content"]["text"])
+                elif msg_type == "execute_result":
+                    outputs.append(str(msg["content"]["data"].get("text/plain", "")) + "\n")
                 elif msg_type == "error":
-                    traceback = msg["content"].get("traceback", [])
-                    raise RuntimeError("\n".join(traceback))
+                    error_value = msg["content"].get("evalue", [])
+                    return "Error: " + "\n".join(error_value)
                 elif msg_type == "status" and msg["content"]["execution_state"] == "idle":
                     break
 
             return "".join(outputs)
 
         except Exception as e:
-            raise RuntimeError(f"Code execution failed: {e}")
+            return f"Error: Code execution failed: {str(e)}"
 
     def destroy(self, **kwargs) -> None:
         """

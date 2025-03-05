@@ -6,6 +6,9 @@ from verifiers.codex.models import CodeExecutor
 class LocalPythonExecutor(CodeExecutor):
     """
     Executes Python code locally in a subprocess for isolation.
+    WARNING: This is dangerous as it executes arbitrary Python code directly on the host machine.
+    Even with subprocess isolation, malicious code could potentially harm the system.
+    Use only in controlled environments with trusted code.
     """
 
     def execute(self, code: str, timeout: int = 10, **kwargs) -> str:
