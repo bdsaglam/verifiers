@@ -133,10 +133,12 @@ class ToolEnv(MultiStepEnv):
             if tool_name not in self.tools:
                 return f"Error: Unknown tool '{tool_name}'"
 
-            tool_func = self.tools[tool_name]
             tool_args = command.get("args", {})
+            if not isinstance(tool_args, dict):
+                return "Error: Tool arguments must be a JSON object"
 
             # Call the tool function with arguments
+            tool_func = self.tools[tool_name]
             result = tool_func(**tool_args, run_context=run_context)
             return str(result)
         except json.JSONDecodeError:

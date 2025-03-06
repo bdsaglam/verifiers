@@ -138,8 +138,8 @@ def make_retrieve_tool(name: str = "bm25", top_k: int = 3) -> Callable:
             kwargs["model"] = parts[1]
         retriever = make_rerank_retriever(**kwargs)
     elif name == "hybrid":
-        rerank_retriever = make_rerank_retriever(top_k=top_k)
-        bm25_retriever = make_bm25_retriever(top_k=top_k)
+        rerank_retriever = make_rerank_retriever(top_k=top_k*2)
+        bm25_retriever = make_bm25_retriever(top_k=top_k*2)
         retriever = make_combined_retriever(rerank_retriever, bm25_retriever, top_k=top_k)
     else:
         raise ValueError(f"Invalid retriever name: {name}")
