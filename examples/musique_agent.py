@@ -70,6 +70,7 @@ def create_environment(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         few_shot=RETRIEVE_FEW_SHOT[0],
+        few_shot_prob=0.0,
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         max_steps=20,

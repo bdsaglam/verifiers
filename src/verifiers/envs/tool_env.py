@@ -27,6 +27,7 @@ class ToolEnv(MultiStepEnv):
         env_parser: XMLParser = XMLParser(fields=["result"]),
         rubric: Rubric | None = None,
         few_shot: List[Dict[str, str]] = [],
+        few_shot_prob: float = 0.5,
         additional_sampling_args={},
         mask_env_response: bool = True,
         **kwargs,
@@ -71,14 +72,14 @@ class ToolEnv(MultiStepEnv):
             dataset=train_dataset,
             system_prompt=formatted_prompt,
             few_shot=few_shot,
-            fewshot_prob=1.0,
+            fewshot_prob=few_shot_prob,
         )
         self.eval_dataset = (
             prepare_dataset_for_env(
                 dataset=eval_dataset,
                 system_prompt=formatted_prompt,
                 few_shot=few_shot,
-                fewshot_prob=1.0,
+                fewshot_prob=few_shot_prob,
             )
             if eval_dataset
             else None
@@ -96,7 +97,7 @@ class ToolEnv(MultiStepEnv):
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
 
-    def get_eval_dataset(self, n: int = -1, **kwargs: Any) -> Dataset | None:
+    def get_eval_dataset(self, n: int = -1, **kwargs: Any) -> Dataset:
         if n > 0:
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
