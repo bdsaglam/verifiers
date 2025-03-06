@@ -134,10 +134,10 @@ def make_retrieve_tool(name: str = "bm25", top_k: int = 3) -> Callable:
     elif name == "bm25":
         retriever = make_bm25_retriever(top_k=top_k)
     elif name.startswith("rerank"):
-        model = name.split("/", 1)[-1].strip()
         kwargs = dict(top_k=top_k)
-        if model:
-            kwargs["model"] = model
+        parts = name.split("/", 1)
+        if len(parts) == 2:
+            kwargs["model"] = parts[1]
         retriever = make_rerank_retriever(**kwargs)
     elif name == "hybrid":
         rerank_retriever = make_rerank_retriever(top_k=top_k)
