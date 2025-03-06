@@ -1,5 +1,6 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
 import uvicorn
@@ -13,7 +14,25 @@ from rerankers.models.ranker import BaseRanker
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Reranker API", description="A REST API for document reranking", version="1.0.0")
+DEFAULT_MODEL = "flashrank/ms-marco-MiniLM-L-12-v2"
+
+# Initialize reranker models
+rerankers = {}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize the default model at startup."""
+    logger.info("Warming up default model...")
+    try:
+        get_reranker(DEFAULT_MODEL)
+        logger.info(f"Successfully loaded default model: {DEFAULT_MODEL}")
+    except Exception as e:
+        logger.error(f"Failed to load default model at startup: {e}")
+    yield
+
+
+app = FastAPI(title="Reranker API", description="A REST API for document reranking", version="1.0.0", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
@@ -28,17 +47,11 @@ app.add_middleware(
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 
-DEFAULT_MODEL = "flashrank/ms-marco-MiniLM-L-12-v2"
-
 
 class RerankerNotFoundError(Exception):
     """Exception raised when a reranker model is not found."""
 
     pass
-
-
-# Initialize reranker models
-rerankers = {}
 
 
 def get_reranker(model_id: str) -> BaseRanker:
@@ -114,7 +127,6 @@ async def health_check():
 async def list_models():
     """List available models endpoint."""
     try:
-        # This is a simplified list; you may want to expand based on what's available in the rerankers library
         return {
             "models": [
                 "flashrank/ms-marco-MiniLM-L-12-v2",
