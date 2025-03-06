@@ -62,6 +62,7 @@ def create_environment(
         few_shot=RETRIEVE_FEW_SHOT[0],
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
+        max_steps=20,
     )
 
     return vf_env
@@ -82,7 +83,7 @@ def train(
     eval_dataset_path: str = typer.Option("bdsaglam/musique"),
     eval_dataset_name: str = typer.Option("answerable"),
     eval_dataset_split: str = typer.Option("validation[:32]"),
-    max_prompt_length: int = typer.Option(4096, "-pl"),
+    max_prompt_length: int = typer.Option(8192, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
     num_generations: int = typer.Option(4, "-g", help="Number of generations per prompt"),
     batch_size: int = typer.Option(16, "-bs", help="Per device batch size"),

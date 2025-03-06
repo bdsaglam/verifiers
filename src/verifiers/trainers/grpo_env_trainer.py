@@ -196,10 +196,12 @@ class GRPOEnvTrainer(GRPOTrainer):
             prompts_to_log = gather_object(prompts)
             completions_to_log = gather_object(completions)
             rewards_to_log = rewards.tolist()
+            inputs_to_log = gather_object(inputs)
 
             if self.accelerator.is_main_process:
                 if is_rich_available():
                     print_prompt_completions_sample(
+                        [inputs_to_log[0]],
                         [str(prompts_to_log[0][-1]["content"])],
                         [completions_to_log[0]],
                         [rewards_to_log[0]],
