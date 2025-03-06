@@ -10,6 +10,7 @@ from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import CODE_FEW_SHOT, CODE_PROMPT
 from verifiers.rubrics.code import CodeRubric
+from verifiers.rubrics.rubric import Rubric
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,9 @@ class CodeEnv(MultiStepEnv):
         eval_dataset: Dataset | None = None,
         system_prompt: str = CODE_PROMPT,
         few_shot: List[Dict[str, str]] = CODE_FEW_SHOT[0],
+        parser: XMLParser = XMLParser(fields=["think", ("code", "answer")]),
+        env_parser: XMLParser = XMLParser(fields=["output"]),
+        rubric: Rubric | None = None,
         additional_sampling_args={},
         mask_env_response: bool = True,
         max_steps: int = 5,
@@ -75,9 +79,9 @@ class CodeEnv(MultiStepEnv):
             if eval_dataset
             else None
         )
-        self.llm_parser = XMLParser(fields=["think", ("code", "answer")])
-        self.env_parser = XMLParser(fields=["output"])
-        self.rubric = CodeRubric(parser=self.llm_parser, env_parser=self.env_parser)
+        self.assistant_parser = parser
+        self.env_parser = env_parser
+        self.rubric = rubric or CodeRubric(parser=self.assistant_parser, env_parser=self.env_parser)
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
@@ -98,7 +102,7 @@ class CodeEnv(MultiStepEnv):
             return True
 
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
             return hasattr(parsed, "answer") and parsed.answer is not None
         except Exception:
@@ -114,7 +118,7 @@ class CodeEnv(MultiStepEnv):
     def env_response(self, state: State, **kwargs: Any) -> Dict[str, str]:
         messages = state["messages"]
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid code field (not just None from failed parsing)
             if code := getattr(parsed, "code", None):
                 output = self.run_code(code)

@@ -1,16 +1,15 @@
 from typing import Dict, List
 
 from verifiers.parsers import XMLParser
-from verifiers.rubrics.rubric import Rubric
 
 
 def make_tool_use_reward_func(
     assistant_parser: XMLParser = XMLParser(fields=["think", ("tool", "answer")]),
     env_parser: XMLParser = XMLParser(fields=["result"]),
 ):
-    def tool_execution_reward_func(completions: List[List[Dict[str, str]]], **kwargs) -> List[float]:
+    def tool_use_reward_func(completions: List[List[Dict[str, str]]], **kwargs) -> List[float]:
         """
-        Reward function that checks tool execution success.
+        Reward function that checks tool use success.
 
         Uses XMLParser to identify proper tool calls.
         """
@@ -44,9 +43,4 @@ def make_tool_use_reward_func(
 
         return [check_execution(c) for c in completions]
 
-    return tool_execution_reward_func
-
-
-class ToolRubric(Rubric):
-    def __init__(self):
-        super().__init__(reward_funcs=[make_tool_use_reward_func()])
+    return tool_use_reward_func

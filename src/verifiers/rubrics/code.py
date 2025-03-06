@@ -2,7 +2,6 @@ from typing import Dict, List
 
 from verifiers.parsers import XMLParser
 from verifiers.rubrics import Rubric
-from verifiers.rubrics.format import get_format_reward_func, get_xml_reward_func
 
 
 class CodeRubric(Rubric):
@@ -15,8 +14,6 @@ class CodeRubric(Rubric):
         self.env_parser = env_parser
         reward_funcs = [
             self.code_execution_reward_func,
-            get_xml_reward_func(self.parser),
-            get_format_reward_func(self.parser),
         ]
         super().__init__(reward_funcs=reward_funcs)
 

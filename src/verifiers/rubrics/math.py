@@ -2,7 +2,7 @@ from typing import List
 
 from verifiers.parsers import XMLParser
 from verifiers.rubrics import Rubric
-from verifiers.rubrics.format import get_format_reward_func, get_xml_reward_func
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 from verifiers.rubrics.qa import exact_answer_reward_func
 from verifiers.rubrics.utils import get_last_answer
 
@@ -24,7 +24,7 @@ class MathRubric(Rubric):
             reward_funcs=[
                 exact_answer_reward_func,
                 int_answer_reward_func,
-                get_xml_reward_func(parser),
-                get_format_reward_func(parser),
+                make_xml_reward_func(parser),
+                make_format_reward_func(parser),
             ]
         )

@@ -14,7 +14,7 @@ from verifiers.envs.tool_env import ToolEnv
 from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
 from verifiers.rubrics import Rubric
-from verifiers.rubrics.format import get_format_reward_func, get_xml_reward_func
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 from verifiers.rubrics.qa import musique_em_reward_func, musique_f1_reward_func
 from verifiers.rubrics.tool import make_tool_use_reward_func
 from verifiers.tools import make_retrieve_tool
@@ -75,8 +75,8 @@ def create_environment(
         max_steps=20,
         rubric=Rubric(
             reward_funcs=[
-                get_xml_reward_func(assistant_parser),
-                get_format_reward_func(assistant_parser),
+                make_xml_reward_func(assistant_parser),
+                make_format_reward_func(assistant_parser),
                 make_tool_use_reward_func(assistant_parser=assistant_parser, env_parser=env_parser),
                 musique_em_reward_func,
                 musique_f1_reward_func,

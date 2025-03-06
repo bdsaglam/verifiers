@@ -5,7 +5,7 @@ from verifiers.parsers.xml_parser import XMLParser
 from .rubric import RewardFunc
 
 
-def get_xml_reward_func(parser: XMLParser) -> RewardFunc:
+def make_xml_reward_func(parser: XMLParser) -> RewardFunc:
     """
     Return a reward function that checks for proper XML tag usage.
     
@@ -61,7 +61,7 @@ def get_xml_reward_func(parser: XMLParser) -> RewardFunc:
 
     return xml_reward_func
 
-def get_format_reward_func(parser: XMLParser) -> RewardFunc:
+def make_format_reward_func(parser: XMLParser) -> RewardFunc:
     """
     Return a reward function that checks if messages follow the expected format.
     

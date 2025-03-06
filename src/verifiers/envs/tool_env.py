@@ -7,11 +7,12 @@ from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.datasets.utils import prepare_dataset_for_env
-from verifiers.envs.multistep_env import MultiStepEnv, State, CompletionOutput
+from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics import Rubric
-from verifiers.rubrics.tool import ToolRubric
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.tool import make_tool_use_reward_func
 
 
 class ToolEnv(MultiStepEnv):
@@ -22,10 +23,12 @@ class ToolEnv(MultiStepEnv):
         eval_dataset: Dataset | None = None,
         tools: List[Callable] = [],
         system_prompt: str = DEFAULT_TOOL_PROMPT_TEMPLATE,
+        assistant_parser: XMLParser = XMLParser(fields=["think", ("tool", "answer")]),
+        env_parser: XMLParser = XMLParser(fields=["result"]),
+        rubric: Rubric | None = None,
         few_shot: List[Dict[str, str]] = [],
         additional_sampling_args={},
         mask_env_response: bool = True,
-        rubric: Rubric = ToolRubric(),
         **kwargs,
     ):
         # Add stop tokens from the tokenizer
@@ -80,9 +83,15 @@ class ToolEnv(MultiStepEnv):
             if eval_dataset
             else None
         )
-        self.rubric = rubric
-        self.llm_parser = XMLParser(fields=["think", ("tool", "answer")])
-        self.env_parser = XMLParser(fields=["result"])
+        self.assistant_parser = assistant_parser
+        self.env_parser = env_parser
+        self.rubric = rubric or Rubric(
+            reward_funcs=[
+                make_xml_reward_func(assistant_parser),
+                make_format_reward_func(assistant_parser),
+                make_tool_use_reward_func(assistant_parser=self.assistant_parser, env_parser=self.env_parser),
+            ],
+        )
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
@@ -103,7 +112,7 @@ class ToolEnv(MultiStepEnv):
             return True
 
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
             return hasattr(parsed, "answer") and parsed.answer is not None
         except Exception:
@@ -138,7 +147,7 @@ class ToolEnv(MultiStepEnv):
         run_context = dict(input=state["input"])
         messages = state["messages"]
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)
             if hasattr(parsed, "tool") and parsed.tool is not None:
                 result = self.call_tool(parsed.tool, run_context=run_context)

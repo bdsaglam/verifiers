@@ -10,7 +10,13 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
+from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
+from verifiers.rubrics.code import CodeRubric
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.qa import exact_answer_reward_func
+from verifiers.rubrics.rubric import Rubric
+from verifiers.rubrics.tool import make_tool_use_reward_func
 
 load_dotenv()
 
@@ -59,16 +65,31 @@ def create_environment(
 
         log.info("Initializing CodeEnv environment")
         code_executor = DockerPythonExecutor()
+
+        assistant_parser = XMLParser(fields=["think", ("code", "answer")])
+        env_parser = XMLParser(fields=["output"])
+
         vf_env = vf.CodeEnv(
             code_executor=code_executor,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             tokenizer=tokenizer,
             few_shot=CODE_FEW_SHOT[0],
+            rubric=Rubric(
+                reward_funcs=[
+                    make_xml_reward_func(assistant_parser),
+                    make_format_reward_func(assistant_parser),
+                    exact_answer_reward_func,
+                    *CodeRubric(parser=assistant_parser, env_parser=env_parser).reward_funcs,
+                ]
+            ),
         )
     elif env_type.lower() == "tool":
         log.info("Initializing ToolEnv environment")
         from verifiers.tools import calculator
+
+        assistant_parser = XMLParser(fields=["think", ("tool", "answer")])
+        env_parser = XMLParser(fields=["result"])
 
         vf_env = vf.ToolEnv(
             train_dataset=train_dataset,
@@ -76,6 +97,16 @@ def create_environment(
             tokenizer=tokenizer,
             few_shot=CALCULATOR_FEW_SHOT[0],
             tools=[calculator],
+            assistant_parser=assistant_parser,
+            env_parser=env_parser,
+            rubric=Rubric(
+                reward_funcs=[
+                    make_xml_reward_func(assistant_parser),
+                    make_format_reward_func(assistant_parser),
+                    exact_answer_reward_func,
+                    make_tool_use_reward_func(assistant_parser=assistant_parser, env_parser=env_parser),
+                ]
+            ),
         )
     else:
         raise ValueError(f"Unknown environment type: {env_type}. Choose 'code' or 'tool'.")
