@@ -20,7 +20,7 @@ services:
     ports:
       - "8003:8000"
     environment:
-      - DEFAULT_MODEL=t5
+      - DEFAULT_MODEL=flashrank
       - HOST=0.0.0.0
       - PORT=8000
     volumes:

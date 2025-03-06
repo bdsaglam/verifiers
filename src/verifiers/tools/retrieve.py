@@ -48,7 +48,7 @@ def make_bm25_retriever(stemmer_lang: str | None = "en", stopwords: list[str] = 
 
 
 def make_rerank_retriever(
-    model: str = "t5/unicamp-dl/mt5-base-mmarco-v2",
+    model: str | None = None,
     top_k: int = 3,
     rerank_client=None,
 ) -> Callable:
@@ -56,15 +56,13 @@ def make_rerank_retriever(
 
     rerank_client = rerank_client or RerankClient()
 
+    kwargs = dict(top_n=top_k, return_documents=False)
+    if model is not None:
+        kwargs["model"] = model
+
     def retrieve(docs: list[dict], query: str) -> list[dict]:
         texts = [doc["text"] for doc in docs]
-        ranking = rerank_client.rerank(
-            query=query,
-            documents=texts,
-            model=model,
-            top_n=top_k,
-            return_documents=False,
-        )
+        ranking = rerank_client.rerank(query=query, documents=texts, **kwargs)
         return [docs[result.index] for result in ranking.results]
 
     return retrieve
@@ -122,7 +120,7 @@ def make_combined_retriever(*retrievers: list[Callable], top_k: int = 3) -> Call
         Returns:
             List of documents sorted by combined relevance score.
         """
-        ranked_docs_list = [retriever(docs, query, top_k) for retriever in retrievers]
+        ranked_docs_list = [retriever(docs, query) for retriever in retrievers]
         return combine_retrieval_results(ranked_docs_list, docs, top_k)
 
     return retrieve

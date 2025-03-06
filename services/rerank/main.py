@@ -1,10 +1,11 @@
+import logging
+import os
+from typing import Any, Dict, List, Optional
+
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-import uvicorn
-import os
-import logging
 from rerankers import Reranker
 from rerankers.models.ranker import BaseRanker
 
@@ -24,17 +25,21 @@ app.add_middleware(
 )
 
 # Load environment variables
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "t5/unicamp-dl/mt5-base-mmarco-v2")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
+
+DEFAULT_MODEL = "flashrank/ms-marco-MiniLM-L-12-v2"
 
 
 class RerankerNotFoundError(Exception):
     """Exception raised when a reranker model is not found."""
+
     pass
+
 
 # Initialize reranker models
 rerankers = {}
+
 
 def get_reranker(model_id: str) -> BaseRanker:
     """Get or initialize a reranker model."""
@@ -50,6 +55,7 @@ def get_reranker(model_id: str) -> BaseRanker:
             raise RuntimeError(f"Model '{model_id}' could not be loaded: {str(e)}")
     return rerankers[model_id]
 
+
 class RerankRequest(BaseModel):
     model: str = DEFAULT_MODEL
     query: str
@@ -57,27 +63,30 @@ class RerankRequest(BaseModel):
     top_n: Optional[int] = None
     return_documents: Optional[bool] = True
 
+
 class RerankResult(BaseModel):
     index: int
     relevance_score: float
     document: Optional[str]
 
+
 class RerankResponse(BaseModel):
     results: List[RerankResult]
     meta: Dict[str, Any] = {}
+
 
 @app.post("/rerank")
 async def rerank(request: RerankRequest) -> RerankResponse:
     """Rerank documents based on their relevance to a query."""
     try:
         reranker = get_reranker(request.model)
-        
+
         # Rerank the documents
-        ranking = reranker.rank(query=request.query, docs=request.documents)
-        
+        ranking = await reranker.rank_async(query=request.query, docs=request.documents)
+
         # Format the response according to Cohere's schema
         rerank_results = []
-        for result in ranking.results[:request.top_n]:
+        for result in ranking.results[: request.top_n]:
             score = result.score if ranking.has_scores else 1
             response_result = RerankResult(
                 index=result.doc_id,
@@ -85,11 +94,8 @@ async def rerank(request: RerankRequest) -> RerankResponse:
                 document=None if not request.return_documents else request.documents[result.doc_id],
             )
             rerank_results.append(response_result)
-        
-        return RerankResponse(
-            results=rerank_results,
-            meta={"model": request.model}
-        )
+
+        return RerankResponse(results=rerank_results, meta={"model": request.model})
     except RerankerNotFoundError as e:
         logger.error(f"Model not found: {e}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -97,10 +103,12 @@ async def rerank(request: RerankRequest) -> RerankResponse:
         logger.error(f"Error during reranking: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
+
 
 @app.get("/models")
 async def list_models():
@@ -109,15 +117,17 @@ async def list_models():
         # This is a simplified list; you may want to expand based on what's available in the rerankers library
         return {
             "models": [
+                "flashrank/ms-marco-MiniLM-L-12-v2",
                 "t5/unicamp-dl/mt5-base-mmarco-v2"
                 "cross-encoder/mixedbread-ai/mxbai-rerank-base-v1"
-                "colbert/colbert-ir/colbertv2.0"
+                "colbert/colbert-ir/colbertv2.0",
             ]
         }
     except Exception as e:
         logger.error(f"Error listing models: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 if __name__ == "__main__":
     logger.info(f"Starting server on {HOST}:{PORT}")
-    uvicorn.run("app:app", host=HOST, port=PORT, reload=False) 
+    uvicorn.run("app:app", host=HOST, port=PORT, reload=False)

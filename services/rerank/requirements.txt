@@ -8,3 +8,4 @@ python-dotenv==1.0.1
 torch==2.6.0
 sentencepiece==0.2.0
 protobuf==5.29.3
+flashrank==0.2.10

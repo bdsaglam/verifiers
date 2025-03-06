@@ -39,7 +39,7 @@ class RerankClient:
         self,
         query: str,
         documents: List[str],
-        model: str = "t5/unicamp-dl/mt5-base-mmarco-v2",
+        model: str | None = None,
         top_n: Optional[int] = None,
         return_documents: bool = True,
     ) -> RerankResponse:
@@ -58,7 +58,9 @@ class RerankClient:
         """
         url = f"{self.base_url}/rerank"
 
-        payload = {"model": model, "query": query, "documents": documents, "return_documents": return_documents}
+        payload = {"query": query, "documents": documents, "return_documents": return_documents}
+        if model is not None:
+            payload["model"] = model
 
         if top_n is not None:
             payload["top_n"] = top_n
