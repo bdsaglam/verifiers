@@ -15,7 +15,8 @@ def preprocess_dataset(dataset: Dataset) -> Dataset:
             "prompt": [{"role": "user", "content": x["question"]}],
             "docs": [_make_doc(p) for p in x["paragraphs"]],
             "answer": x["answer"],
+            "answers": [x["answer"], *x["answer_aliases"]],
             "titles": [p["title"] for p in x["paragraphs"]],
         },
-        remove_columns=["id", "question", "paragraphs", "question_decomposition", "answerable"],
+        remove_columns=["id", "question", "paragraphs", "question_decomposition", "answerable", "answer_aliases"],
     )

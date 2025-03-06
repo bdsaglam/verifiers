@@ -2,13 +2,13 @@ import json
 
 from verifiers.parsers import XMLParser
 
-math_parser = XMLParser(fields=["reasoning", "answer"])
+math_parser = XMLParser(fields=["think", "answer"])
 MATH_FEW_SHOT = [
     [
         {"role": "user", "content": "What is the largest single-digit prime number?"},
         {
             "role": "assistant",
-            "content": math_parser.format(reasoning="The largest single-digit prime number is 7.", answer="7"),
+            "content": math_parser.format(think="The largest single-digit prime number is 7.", answer="7"),
         },
     ]
 ]
@@ -18,20 +18,20 @@ DOUBLECHECK_FEW_SHOT = [
         {"role": "user", "content": "What is the largest single-digit prime number?"},
         {
             "role": "assistant",
-            "content": math_parser.format(reasoning="The largest single-digit prime number is 7.", answer="7"),
+            "content": math_parser.format(think="The largest single-digit prime number is 7.", answer="7"),
         },
         {"role": "user", "content": "Are you sure?"},
         {
             "role": "assistant",
             "content": math_parser.format(
-                reasoning="The only larger single-digit numbers are 8 and 9, which are not prime. So yes, the answer is 7.",
+                think="The only larger single-digit numbers are 8 and 9, which are not prime. So yes, the answer is 7.",
                 answer="7",
             ),
         },
     ]
 ]
 
-code_parser = XMLParser(fields=["reasoning", ("code", "answer")])
+code_parser = XMLParser(fields=["think", ("code", "answer")])
 output_parser = XMLParser(fields=["output"])
 CODE_FEW_SHOT = [
     [
@@ -39,12 +39,12 @@ CODE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": code_parser.format(
-                reasoning="Let's compute the sum of the first 100 positive even integers.",
+                think="Let's compute the sum of the first 100 positive even integers.",
                 code="print(sum(range(2, 102, 2)))",
             ),
         },
         {"role": "tool", "content": output_parser.format(output="2550")},
-        {"role": "assistant", "content": code_parser.format(reasoning="The answer is 2550.", answer="2550")},
+        {"role": "assistant", "content": code_parser.format(think="The answer is 2550.", answer="2550")},
         {
             "role": "user",
             "content": "What is the sum of the first 100 natural numbers, minus the largest prime number less than 100?",
@@ -52,7 +52,7 @@ CODE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": code_parser.format(
-                reasoning="The sum of the first n natural numbers is given by the formula n(n+1)/2.",
+                think="The sum of the first n natural numbers is given by the formula n(n+1)/2.",
                 code="print(100*101/2)",
             ),
         },
@@ -60,7 +60,7 @@ CODE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": code_parser.format(
-                reasoning="The sum of the first 100 natural numbers is 5050. Now we need to subtract the largest prime number less than 100.",
+                think="The sum of the first 100 natural numbers is 5050. Now we need to subtract the largest prime number less than 100.",
                 code="print(5050 - 97)",
             ),
         },
@@ -68,16 +68,16 @@ CODE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": code_parser.format(
-                reasoning="The largest prime number less than 100 is 97. Subtracting this from 5050 gives 4953.",
+                think="The largest prime number less than 100 is 97. Subtracting this from 5050 gives 4953.",
                 answer="4953",
             ),
         },
     ]
 ]
 
-tool_parser = XMLParser(fields=["reasoning", "tool"])
+tool_parser = XMLParser(fields=["think", "tool"])
 result_parser = XMLParser(fields=["result"])
-answer_parser = XMLParser(fields=["reasoning", "answer"])
+answer_parser = XMLParser(fields=["think", "answer"])
 
 TOOL_FEW_SHOT = [
     [
@@ -85,7 +85,7 @@ TOOL_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="Let's use the pwd command to find out the current working directory.",
+                think="Let's use the pwd command to find out the current working directory.",
                 tool="pwd",
             ),
         },
@@ -93,7 +93,7 @@ TOOL_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="The current working directory is /Users/user/project.",
+                think="The current working directory is /Users/user/project.",
                 answer="/Users/user/project",
             ),
         },
@@ -101,7 +101,7 @@ TOOL_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="Let's use the find command to count Python files.",
+                think="Let's use the find command to count Python files.",
                 tool='find . -name "*.py" | wc -l',
             ),
         },
@@ -109,7 +109,7 @@ TOOL_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="There are 42 Python files in the current directory and its subdirectories.",
+                think="There are 42 Python files in the current directory and its subdirectories.",
                 answer="42",
             ),
         },
@@ -122,7 +122,7 @@ COMMONSENSE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="Let's compare the volume levels of a mouse and an elephant.",
+                think="Let's compare the volume levels of a mouse and an elephant.",
                 tool="compare mouse elephant volume",
             ),
         },
@@ -139,7 +139,7 @@ COMMONSENSE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="Based on the comparison, an elephant has a volume level of 5 while a mouse has a volume level of 1 (on a scale of 1-5). The difference of -4 indicates the elephant is much louder.",
+                think="Based on the comparison, an elephant has a volume level of 5 while a mouse has a volume level of 1 (on a scale of 1-5). The difference of -4 indicates the elephant is much louder.",
                 answer="An elephant would be louder than a mouse.",
             ),
         },
@@ -147,7 +147,7 @@ COMMONSENSE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="Let's look up the properties of a car.",
+                think="Let's look up the properties of a car.",
                 tool="get_related car",
             ),
         },
@@ -163,7 +163,7 @@ COMMONSENSE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="A car has several key properties: it is metallic, fast, loud, and heavy. It belongs to the category of vehicles.",
+                think="A car has several key properties: it is metallic, fast, loud, and heavy. It belongs to the category of vehicles.",
                 answer="A car is a vehicle that is metallic, fast, loud, and heavy.",
             ),
         },
@@ -179,7 +179,7 @@ SEARCH_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="I need to understand what mechanical weathering is and which of these options matches that phenomenon. Let me search for information about mechanical weathering.",
+                think="I need to understand what mechanical weathering is and which of these options matches that phenomenon. Let me search for information about mechanical weathering.",
                 tool=json.dumps(
                     {"name": "search", "args": {"query": "what is mechanical weathering examples", "num_results": 3}}
                 ),
@@ -194,7 +194,7 @@ SEARCH_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="Based on the search results, mechanical weathering is the process by which rocks are broken down into smaller pieces by external forces, without changing their chemical composition. Some examples include:\n\n1. Frost wedging - when water gets into cracks, freezes, and expands, breaking the rock apart\n2. Thermal expansion/contraction\n3. Plant root growth\n4. Animal activity\n5. Abrasion\n\nLooking at the answer choices:\nA. A rock turns red when iron minerals are exposed to oxygen - This is chemical weathering, as it involves a chemical change (oxidation).\nB. A rock breaks apart after water freezes and expands in a crack - This is frost wedging, a form of mechanical weathering.\nC. A rock dissolves as acidic rainwater flows over its surface - This is chemical weathering (dissolution).\nD. A rock changes composition when exposed to extreme heat - This is a chemical/thermal change, not mechanical weathering.\n\nThe answer is B, as it's the only option that describes mechanical weathering.",
+                think="Based on the search results, mechanical weathering is the process by which rocks are broken down into smaller pieces by external forces, without changing their chemical composition. Some examples include:\n\n1. Frost wedging - when water gets into cracks, freezes, and expands, breaking the rock apart\n2. Thermal expansion/contraction\n3. Plant root growth\n4. Animal activity\n5. Abrasion\n\nLooking at the answer choices:\nA. A rock turns red when iron minerals are exposed to oxygen - This is chemical weathering, as it involves a chemical change (oxidation).\nB. A rock breaks apart after water freezes and expands in a crack - This is frost wedging, a form of mechanical weathering.\nC. A rock dissolves as acidic rainwater flows over its surface - This is chemical weathering (dissolution).\nD. A rock changes composition when exposed to extreme heat - This is a chemical/thermal change, not mechanical weathering.\n\nThe answer is B, as it's the only option that describes mechanical weathering.",
                 answer="B",
             ),
         },
@@ -210,7 +210,7 @@ CALCULATOR_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="Let's solve this step by step:\n1. First, calculate how many marbles Janet has (3 times Tom's)",
+                think="Let's solve this step by step:\n1. First, calculate how many marbles Janet has (3 times Tom's)",
                 tool=json.dumps({"name": "calculator", "args": {"expression": "3 * 12"}}),
             ),
         },
@@ -218,7 +218,7 @@ CALCULATOR_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="2. Now we know:\n   - Tom has 12 marbles\n   - Janet has 36 marbles\n   Let's add them together",
+                think="2. Now we know:\n   - Tom has 12 marbles\n   - Janet has 36 marbles\n   Let's add them together",
                 tool=json.dumps({"name": "calculator", "args": {"expression": "36 + 12"}}),
             ),
         },
@@ -226,7 +226,7 @@ CALCULATOR_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="Together they have 48 marbles:\n- Tom: 12 marbles\n- Janet: 36 marbles (3 times Tom's)\n- Total: 48 marbles",
+                think="Together they have 48 marbles:\n- Tom: 12 marbles\n- Janet: 36 marbles (3 times Tom's)\n- Total: 48 marbles",
                 answer="48",
             ),
         },
@@ -239,7 +239,7 @@ CALCULATOR_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="To find how many complete batches Samantha can make, I need to divide the total amount of flour by the amount needed per batch.",
+                think="To find how many complete batches Samantha can make, I need to divide the total amount of flour by the amount needed per batch.",
                 tool=json.dumps({"name": "calculator", "args": {"expression": "10 / 2.5"}}),
             ),
         },
@@ -247,7 +247,7 @@ CALCULATOR_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="Samantha has 10 cups of flour and each batch requires 2.5 cups of flour.\n10 ÷ 2.5 = 4\nSo Samantha can make 4 complete batches of cookies with her 10 cups of flour.",
+                think="Samantha has 10 cups of flour and each batch requires 2.5 cups of flour.\n10 ÷ 2.5 = 4\nSo Samantha can make 4 complete batches of cookies with her 10 cups of flour.",
                 answer="4",
             ),
         },
@@ -263,7 +263,7 @@ RETRIEVE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="First, I need to find the inventor of alternative current.",
+                think="First, I need to find the inventor of alternative current.",
                 tool=json.dumps({"name": "retrieve", "args": {"query": "inventor of alternative current"}}),
             ),
         },
@@ -276,7 +276,7 @@ RETRIEVE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": tool_parser.format(
-                reasoning="Now I need to find where Nikola Tesla was born.",
+                think="Now I need to find where Nikola Tesla was born.",
                 tool=json.dumps({"name": "retrieve", "args": {"query": "country birth place of Nikola Tesla"}}),
             ),
         },
@@ -289,7 +289,7 @@ RETRIEVE_FEW_SHOT = [
         {
             "role": "assistant",
             "content": answer_parser.format(
-                reasoning="Nikola Tesla was born in Croatia.",
+                think="Nikola Tesla was born in Croatia.",
                 answer="Croatia",
             ),
         },

@@ -9,7 +9,7 @@ from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import CODE_FEW_SHOT, CODE_PROMPT
-from verifiers.rubrics import CodeRubric
+from verifiers.rubrics.code import CodeRubric
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class CodeEnv(MultiStepEnv):
             if eval_dataset
             else None
         )
-        self.llm_parser = XMLParser(fields=["reasoning", ("code", "answer")])
+        self.llm_parser = XMLParser(fields=["think", ("code", "answer")])
         self.env_parser = XMLParser(fields=["output"])
         self.rubric = CodeRubric(parser=self.llm_parser, env_parser=self.env_parser)
 

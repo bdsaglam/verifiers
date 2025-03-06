@@ -8,26 +8,26 @@ llm = LLM(model="Qwen/Qwen2.5-7B-Instruct")
 SYSTEM_PROMPT = """
 Respond in the following format, using careful step-by-step thinking:
 
-<reasoning>
+<think>
 ...
-</reasoning>
+</think>
 <answer>
 ...
 </answer>
 """
 
 XML_COT_FORMAT = """\
-<reasoning>
-{reasoning}
-</reasoning>
+<think>
+{think}
+</think>
 <answer>
 {answer}
 </answer>
 """
 
-def extract_xml_reasoning(text: str) -> str:
-    reason = text.split("<reasoning>")[-1]
-    reason = reason.split("</reasoning>")[0]
+def extract_xml_think(text: str) -> str:
+    reason = text.split("<think>")[-1]
+    reason = reason.split("</think>")[0]
     return reason.strip()
 
 def extract_xml_answer(text: str) -> str:
@@ -47,7 +47,7 @@ def get_gsm8k_questions(split = "train") -> Dataset:
             {'role': 'system', 'content': SYSTEM_PROMPT},
             {'role': 'user', 'content': 'What is the largest single-digit prime number?'},
             {'role': 'assistant', 'content': XML_COT_FORMAT.format(
-                reasoning="9 is divisble by 3 and 8 is divisible by 2, but 7 is prime.",
+                think="9 is divisble by 3 and 8 is divisible by 2, but 7 is prime.",
                 answer="7"
             )},
             {'role': 'user', 'content': x['question']}

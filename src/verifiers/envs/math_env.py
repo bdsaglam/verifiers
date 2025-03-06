@@ -4,7 +4,7 @@ from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.simple_env import SimpleEnv
 from verifiers.parsers import XMLParser
-from verifiers.rubrics import MathRubric
+from verifiers.rubrics.math import MathRubric
 from verifiers.prompts import SIMPLE_PROMPT, MATH_FEW_SHOT
 from verifiers.utils import preprocess_dataset
 
@@ -13,7 +13,7 @@ class MathEnv(SimpleEnv):
                  dataset: str = "gsm8k",
                  system_prompt: str = SIMPLE_PROMPT,    
                  few_shot: List[Dict[str, str]] = MATH_FEW_SHOT[0],
-                 fields: List[str | Tuple[str, ...]] = ["reasoning", "answer"],
+                 fields: List[str | Tuple[str, ...]] = ["think", "answer"],
                  **kwargs):
         super().__init__(system_prompt=system_prompt, few_shot=few_shot, **kwargs)
         self.parser = XMLParser(fields=fields)

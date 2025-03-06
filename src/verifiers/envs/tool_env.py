@@ -10,7 +10,8 @@ from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import MultiStepEnv, State, CompletionOutput
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
-from verifiers.rubrics import ToolRubric
+from verifiers.rubrics import Rubric
+from verifiers.rubrics.tool import ToolRubric
 
 
 class ToolEnv(MultiStepEnv):
@@ -24,6 +25,7 @@ class ToolEnv(MultiStepEnv):
         few_shot: List[Dict[str, str]] = [],
         additional_sampling_args={},
         mask_env_response: bool = True,
+        rubric: Rubric = ToolRubric(),
         **kwargs,
     ):
         # Add stop tokens from the tokenizer
@@ -78,8 +80,8 @@ class ToolEnv(MultiStepEnv):
             if eval_dataset
             else None
         )
-        self.rubric = ToolRubric()
-        self.llm_parser = XMLParser(fields=["reasoning", ("tool", "answer")])
+        self.rubric = rubric
+        self.llm_parser = XMLParser(fields=["think", ("tool", "answer")])
         self.env_parser = XMLParser(fields=["result"])
 
     def get_dataset(self, **kwargs: Any) -> Dataset:

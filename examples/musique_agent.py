@@ -10,6 +10,15 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
+from verifiers.envs.tool_env import ToolEnv
+from verifiers.parsers.xml_parser import XMLParser
+from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
+from verifiers.rubrics import Rubric
+from verifiers.rubrics.format import get_format_reward_func, get_xml_reward_func
+from verifiers.rubrics.qa import musique_em_reward_func, musique_f1_reward_func
+from verifiers.rubrics.tool import make_tool_use_reward_func
+from verifiers.tools import make_retrieve_tool
+
 
 load_dotenv()
 
@@ -46,14 +55,15 @@ def create_environment(
         train_dataset: Dataset for training
         eval_dataset: Dataset for evaluation
         tokenizer: Tokenizer instance
+        retriever: Retriever to use
 
     Returns:
         A tuple containing the initialized environment and a default suffix for run naming
     """
-    log.info("Initializing ToolEnv environment")
-    from verifiers.envs.tool_env import ToolEnv
-    from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
-    from verifiers.tools import make_retrieve_tool
+    log.info("Initializing the environment")
+
+    assistant_parser = XMLParser(fields=["think", ("tool", "answer")])
+    env_parser = XMLParser(fields=["result"])
 
     vf_env = ToolEnv(
         train_dataset=train_dataset,
@@ -63,6 +73,15 @@ def create_environment(
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         max_steps=20,
+        rubric=Rubric(
+            reward_funcs=[
+                get_xml_reward_func(assistant_parser),
+                get_format_reward_func(assistant_parser),
+                make_tool_use_reward_func(assistant_parser=assistant_parser, env_parser=env_parser),
+                musique_em_reward_func,
+                musique_f1_reward_func,
+            ]
+        ),
     )
 
     return vf_env

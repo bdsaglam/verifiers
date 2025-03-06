@@ -5,7 +5,7 @@ from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.prompts import DOUBLECHECK_FEW_SHOT, SIMPLE_PROMPT
-from verifiers.rubrics import MathRubric
+from verifiers.rubrics.math import MathRubric
 from verifiers.utils import preprocess_dataset
 
 
