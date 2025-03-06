@@ -8,6 +8,7 @@ description = "Verifiers for reinforcement learning with LLMs"
 license = {text = "MIT"}
 requires-python = ">=3.11,<3.12"
 dependencies = [
+    "pydantic",
     "torch",
     "deepspeed==0.15.3",
     "accelerate",
@@ -33,5 +34,5 @@ dev = [
 retrieve = [
     "bm25s[full]",
     "pystemmer",
-    "rerankers[transformers]==0.7.0",
+    "httpx",
 ]
