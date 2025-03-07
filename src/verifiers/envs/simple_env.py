@@ -24,11 +24,11 @@ class SimpleEnv(Environment):
     def get_eval_dataset(self, **kwargs: Any) -> Dataset | None:
         pass
 
-    def format_prompt(self, prompt: str, fewshot_prob: float = 1.0) -> List[Dict[str, str]]:
+    def format_prompt(self, prompt: str, few_shot_prob: float = 1.0) -> List[Dict[str, str]]:
         messages = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
-        if self.few_shot and random.random() < fewshot_prob:
+        if self.few_shot and random.random() < few_shot_prob:
             messages.extend(self.few_shot)
         messages.append({"role": "user", "content": prompt})
         return messages

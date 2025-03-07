@@ -75,7 +75,7 @@ class RerankClient:
         if response.status_code != 200:
             try:
                 error_detail = response.json().get("detail", response.text)
-            except:
+            except Exception:
                 error_detail = response.text
 
             raise Exception(f"API request failed with status {response.status_code}: {error_detail}")

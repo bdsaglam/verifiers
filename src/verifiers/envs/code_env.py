@@ -9,8 +9,7 @@ from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import CODE_FEW_SHOT, CODE_PROMPT
-from verifiers.rubrics.code import CodeRubric
-from verifiers.rubrics.rubric import Rubric
+from verifiers.rubrics import Rubric
 
 log = logging.getLogger(__name__)
 
@@ -20,13 +19,14 @@ class CodeEnv(MultiStepEnv):
         self,
         code_executor: CodeExecutor,
         tokenizer: Any,
+        rubric: Rubric,
         train_dataset: Dataset,
         eval_dataset: Dataset | None = None,
         system_prompt: str = CODE_PROMPT,
         few_shot: List[Dict[str, str]] = CODE_FEW_SHOT[0],
+        few_shot_prob: float = 1.0,
         parser: XMLParser = XMLParser(fields=["think", ("code", "answer")]),
         env_parser: XMLParser = XMLParser(fields=["output"]),
-        rubric: Rubric | None = None,
         additional_sampling_args={},
         mask_env_response: bool = True,
         max_steps: int = 5,
@@ -67,21 +67,21 @@ class CodeEnv(MultiStepEnv):
             dataset=train_dataset,
             system_prompt=system_prompt,
             few_shot=few_shot,
-            fewshot_prob=1.0,
+            few_shot_prob=few_shot_prob,
         )
         self.eval_dataset = (
             prepare_dataset_for_env(
                 dataset=eval_dataset,
                 system_prompt=system_prompt,
                 few_shot=few_shot,
-                fewshot_prob=1.0,
+                few_shot_prob=1.0,
             )
             if eval_dataset
             else None
         )
         self.assistant_parser = parser
         self.env_parser = env_parser
-        self.rubric = rubric or CodeRubric(parser=self.assistant_parser, env_parser=self.env_parser)
+        self.rubric = rubric
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset

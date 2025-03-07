@@ -41,12 +41,12 @@ def format_prompt(
     prompt: str,
     system_prompt: str | None = None,
     few_shot: List[Dict[str, str]] | None = None,
-    fewshot_prob: float = 1.0,
+    few_shot_prob: float = 1.0,
 ) -> List[Dict[str, str]]:
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
-    if few_shot and random.random() < fewshot_prob:
+    if few_shot and random.random() < few_shot_prob:
         messages.extend(few_shot)
     messages.append({"role": "user", "content": prompt})
     return messages
@@ -57,13 +57,13 @@ def preprocess_dataset(
     split: str = "train",
     system_prompt: str | None = None,
     few_shot: List[Dict[str, str]] | None = None,
-    fewshot_prob: float = 1.0,
+    few_shot_prob: float = 1.0,
 ) -> Dataset:
     if dataset_name == "gsm8k":
         dataset: Dataset = load_dataset("openai/gsm8k", "main")[split]  # type: ignore
         dataset = dataset.map(
             lambda x: {
-                "prompt": format_prompt(x["question"], system_prompt, few_shot, fewshot_prob),
+                "prompt": format_prompt(x["question"], system_prompt, few_shot, few_shot_prob),
                 "answer": extract_hash_answer(x["answer"]),
             }
         )
@@ -72,7 +72,7 @@ def preprocess_dataset(
         dataset: Dataset = load_dataset("chiayewken/competition_math")[split]  # type: ignore
         dataset = dataset.map(
             lambda x: {
-                "prompt": format_prompt(x["problem"], system_prompt, few_shot, fewshot_prob),
+                "prompt": format_prompt(x["problem"], system_prompt, few_shot, few_shot_prob),
                 "answer": extract_boxed_answer(x["solution"]),
             }
         )
@@ -97,7 +97,7 @@ def preprocess_dataset(
                     format_question(x),
                     str(system_prompt) + "\n\nReturn only the letter of the correct answer.",
                     few_shot,
-                    fewshot_prob,
+                    few_shot_prob,
                 ),
                 "answer": x["answerKey"],
             }

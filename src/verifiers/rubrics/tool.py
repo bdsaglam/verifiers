@@ -4,9 +4,19 @@ from verifiers.parsers import XMLParser
 
 
 def make_tool_use_reward_func(
-    assistant_parser: XMLParser = XMLParser(fields=["think", ("tool", "answer")]),
-    env_parser: XMLParser = XMLParser(fields=["result"]),
+    tool_tag: str = "tool",
+    result_tag: str = "result",
 ):
+    """
+    Create a reward function that checks tool use success.
+
+    Args:
+        tool_tag: The XML tag used to identify tool calls in assistant messages
+        result_tag: The XML tag used to identify results in environment responses
+    """
+    assistant_parser = XMLParser(fields=[tool_tag])
+    env_parser = XMLParser(fields=[result_tag])
+
     def tool_use_reward_func(completions: List[List[Dict[str, str]]], **kwargs) -> List[float]:
         """
         Reward function that checks tool use success.
@@ -23,16 +33,16 @@ def make_tool_use_reward_func(
                 if msg["role"] == "assistant":
                     # Use parser to check for tool tag
                     parsed = assistant_parser.parse(msg["content"])
-                    if hasattr(parsed, "tool") and parsed.tool is not None:
+                    if hasattr(parsed, tool_tag) and getattr(parsed, tool_tag) is not None:
                         # Found a properly formatted tool message
                         if i + 1 < len(trajectory) and trajectory[i + 1]["role"] == "tool":
                             tool_attempts += 1
                             # Check response with env_parser
                             parsed_response = env_parser.parse(trajectory[i + 1]["content"])
                             if (
-                                hasattr(parsed_response, "result")
-                                and parsed_response.result is not None
-                                and not parsed_response.result.startswith("Error:")
+                                hasattr(parsed_response, result_tag)
+                                and getattr(parsed_response, result_tag) is not None
+                                and not getattr(parsed_response, result_tag).startswith("Error:")
                             ):
                                 successful_executions += 1
 

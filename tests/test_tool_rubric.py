@@ -1,7 +1,7 @@
 import pytest
 from typing import Dict, List
 
-from verifiers.rubrics.rubric import Rubric
+from verifiers.rubrics import Rubric
 from verifiers.rubrics.tool import make_tool_reward_funcs
 
 

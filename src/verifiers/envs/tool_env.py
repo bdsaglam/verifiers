@@ -72,14 +72,14 @@ class ToolEnv(MultiStepEnv):
             dataset=train_dataset,
             system_prompt=formatted_prompt,
             few_shot=few_shot,
-            fewshot_prob=few_shot_prob,
+            few_shot_prob=few_shot_prob,
         )
         self.eval_dataset = (
             prepare_dataset_for_env(
                 dataset=eval_dataset,
                 system_prompt=formatted_prompt,
                 few_shot=few_shot,
-                fewshot_prob=few_shot_prob,
+                few_shot_prob=few_shot_prob,
             )
             if eval_dataset
             else None
@@ -133,16 +133,17 @@ class ToolEnv(MultiStepEnv):
             if tool_name not in self.tools:
                 return f"Error: Unknown tool '{tool_name}'"
 
-            tool_args = command.get("args", {})
-            if not isinstance(tool_args, dict):
-                return "Error: Tool arguments must be a JSON object"
-
             # Call the tool function with arguments
             tool_func = self.tools[tool_name]
-            result = tool_func(**tool_args, run_context=run_context)
+            tool_args = command.get("args", {})
+            if isinstance(tool_args, dict):
+                result = tool_func(**tool_args, run_context=run_context)
+            else:
+                result = tool_func(tool_args, run_context=run_context)
+
             return str(result)
         except json.JSONDecodeError:
-            return "Error: Invalid JSON format"
+            return "Error: Invalid JSON inside <tool> tags"
         except Exception as e:
             return f"Error: {str(e)}"
 

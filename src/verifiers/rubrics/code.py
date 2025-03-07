@@ -1,21 +1,14 @@
 from typing import Dict, List
 
 from verifiers.parsers import XMLParser
-from verifiers.rubrics import Rubric
+from verifiers.rubrics.models import RewardFunc
 
 
-class CodeRubric(Rubric):
-    def __init__(
-        self,
-        parser: XMLParser = XMLParser(fields=["think", ("code", "answer")]),
-        env_parser: XMLParser = XMLParser(fields=["output"]),
-    ):
-        self.parser = parser
-        self.env_parser = env_parser
-        reward_funcs = [
-            self.code_execution_reward_func,
-        ]
-        super().__init__(reward_funcs=reward_funcs)
+def make_code_execution_reward_func(code_tag: str = "code", output_tag: str = "output") -> RewardFunc:
+
+    assistant_parser = XMLParser(fields=[code_tag])
+    env_parser = XMLParser(fields=[output_tag])
+
 
     def code_execution_reward_func(self, completions: List[List[Dict[str, str]]], **kwargs) -> List[float]:
         """Reward function that checks code execution success at each step."""
@@ -26,14 +19,14 @@ class CodeRubric(Rubric):
 
             for i, msg in enumerate(trajectory):
                 if msg["role"] == "assistant":
-                    parsed = self.parser.parse(msg["content"])
-                    if hasattr(parsed, "code") and parsed.code is not None:
+                    parsed = assistant_parser.parse(msg["content"])
+                    if hasattr(parsed, code_tag) and parsed.code is not None:
                         total_code_steps += 1
                         # Look for the next user message (environment response)
                         if i + 1 < len(trajectory) and trajectory[i + 1]["role"] == "user":
                             env_response = trajectory[i + 1]["content"]
-                            parsed_response = self.env_parser.parse(env_response)
-                            if hasattr(parsed_response, "output") and parsed_response.output:
+                            parsed_response = env_parser.parse(env_response)
+                            if hasattr(parsed_response, output_tag) and parsed_response.output is not None:
                                 output = parsed_response.output
                                 if len(output) > 0 and not output.startswith("Error:"):
                                     successful_executions += 1
@@ -44,3 +37,5 @@ class CodeRubric(Rubric):
             return 0.3 * (successful_executions / total_code_steps) + 0.05 * (successful_executions)
 
         return [check_execution(c) for c in completions]
+
+    return code_execution_reward_func

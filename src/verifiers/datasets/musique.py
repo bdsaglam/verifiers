@@ -10,6 +10,7 @@ def _make_doc(p: dict) -> dict:
 
 
 def preprocess_dataset(dataset: Dataset) -> Dataset:
+    dataset = dataset.filter(lambda x: len(x["question_decomposition"]) <= 2)
     return dataset.map(
         lambda x: {
             "prompt": [{"role": "user", "content": x["question"]}],

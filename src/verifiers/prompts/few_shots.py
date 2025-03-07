@@ -258,25 +258,25 @@ RETRIEVE_FEW_SHOT = [
     [
         {
             "role": "user",
-            "content": "Which country was the inventor of alternative current born?",
+            "content": "Which country was the inventor of AC born?",
         },
         {
             "role": "assistant",
             "content": tool_parser.format(
-                think="First, I need to find the inventor of alternative current.",
-                tool=json.dumps({"name": "retrieve", "args": {"query": "inventor of alternative current"}}),
+                think="First, I need to find the inventor of alternative current (AC).",
+                tool=json.dumps({"name": "retrieve", "args": {"query": "inventor of alternative current AC"}}),
             ),
         },
         {
             "role": "tool",
             "content": result_parser.format(
-                result="Nikola Tesla developed polyphase alternating current system of generators, motors and transformers and held 40 basic U.S. patents on the system, which George Westinghouse bought, determined to supply America with the Tesla system."
+                result="Nikola Tesla developed polyphase alternating current system of generators, motors and transformers and held 40 basic U.S. patents on the system, which George Westinghouse bought, determined to supply America with the Tesla system...."
             ),
         },
         {
             "role": "assistant",
             "content": tool_parser.format(
-                think="Now I need to find where Nikola Tesla was born.",
+                think="According to the information retrieved, the inventor of AC is Nikola Tesla. Now, I need to find where he was born.",
                 tool=json.dumps({"name": "retrieve", "args": {"query": "country birth place of Nikola Tesla"}}),
             ),
         },

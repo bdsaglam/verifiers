@@ -12,10 +12,10 @@ from trl import GRPOConfig
 import verifiers as vf
 from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
-from verifiers.rubrics.code import CodeRubric
+from verifiers.rubrics import Rubric
+from verifiers.rubrics.code import make_code_execution_reward_func
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 from verifiers.rubrics.qa import exact_answer_reward_func
-from verifiers.rubrics.rubric import Rubric
 from verifiers.rubrics.tool import make_tool_use_reward_func
 
 load_dotenv()
@@ -66,8 +66,10 @@ def create_environment(
         log.info("Initializing CodeEnv environment")
         code_executor = DockerPythonExecutor()
 
-        assistant_parser = XMLParser(fields=["think", ("code", "answer")])
-        env_parser = XMLParser(fields=["output"])
+        code_tag = "code"
+        output_tag = "output"
+        assistant_parser = XMLParser(fields=["think", (code_tag, "answer")])
+        env_parser = XMLParser(fields=[output_tag])
 
         vf_env = vf.CodeEnv(
             code_executor=code_executor,
@@ -75,12 +77,13 @@ def create_environment(
             eval_dataset=eval_dataset,
             tokenizer=tokenizer,
             few_shot=CODE_FEW_SHOT[0],
+            few_shot_prob=1.0,
             rubric=Rubric(
                 reward_funcs=[
                     make_xml_reward_func(assistant_parser),
                     make_format_reward_func(assistant_parser),
                     exact_answer_reward_func,
-                    *CodeRubric(parser=assistant_parser, env_parser=env_parser).reward_funcs,
+                    make_code_execution_reward_func(code_tag=code_tag, output_tag=output_tag),
                 ]
             ),
         )
@@ -88,14 +91,17 @@ def create_environment(
         log.info("Initializing ToolEnv environment")
         from verifiers.tools import calculator
 
-        assistant_parser = XMLParser(fields=["think", ("tool", "answer")])
-        env_parser = XMLParser(fields=["result"])
+        tool_tag = "tool"
+        result_tag = "result"
+        assistant_parser = XMLParser(fields=["think", (tool_tag, "answer")])
+        env_parser = XMLParser(fields=[result_tag])
 
         vf_env = vf.ToolEnv(
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             tokenizer=tokenizer,
             few_shot=CALCULATOR_FEW_SHOT[0],
+            few_shot_prob=1.0,
             tools=[calculator],
             assistant_parser=assistant_parser,
             env_parser=env_parser,
@@ -104,7 +110,7 @@ def create_environment(
                     make_xml_reward_func(assistant_parser),
                     make_format_reward_func(assistant_parser),
                     exact_answer_reward_func,
-                    make_tool_use_reward_func(assistant_parser=assistant_parser, env_parser=env_parser),
+                    make_tool_use_reward_func(tool_tag=tool_tag, result_tag=result_tag),
                 ]
             ),
         )
@@ -181,7 +187,7 @@ def train(
         adam_beta1=0.9,
         adam_beta2=0.99,
         max_grad_norm=0.01,
-        num_iterations=1,  # steps per global batch (1 on-policy, 1 off-policy)
+        num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         beta=beta,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,

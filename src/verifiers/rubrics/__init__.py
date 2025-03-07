@@ -1,3 +1,3 @@
-from .rubric import Rubric
+from .models import Rubric, RewardFunc
 
-__all__ = ["Rubric"]
+__all__ = ["Rubric", "RewardFunc"]
