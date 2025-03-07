@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Callable
 
+from verifiers.models import RunContext
+
 
 def golden_retriever(docs: list[dict], query: str) -> list[dict]:
     return [doc for doc in docs if doc["is_supporting"]]
@@ -144,9 +146,9 @@ def make_retrieve_tool(name: str = "bm25", top_k: int = 3) -> Callable:
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
-    def retrieve(query: str, **kwargs) -> str:
+    def retrieve(query: str, run_context: RunContext, **kwargs) -> str:
         """Search for relevant documents by the query. The results become better if the query is more specific."""
-        docs = kwargs["run_context"]["input"]["docs"]
+        docs = run_context["input"]["docs"]
         retrieved_docs = retriever(docs, query)
         return "\n\n".join([x["text"] for x in retrieved_docs])
 

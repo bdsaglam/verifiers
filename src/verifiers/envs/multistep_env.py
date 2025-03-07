@@ -5,17 +5,19 @@ from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.environment import Environment
+from verifiers.models import Input, Message
 
 from ..imports import LLM, CompletionOutput, SamplingParams  # type: ignore
 
 
 class State(TypedDict):
-    messages: List[Dict[str, str]]
-    n_prompt_messages: int
-    input: Dict[str, Any]
-    prompt_ids: List[int]
     completed: bool
+    input: Input
+    messages: List[Message]
+    n_prompt_messages: int
+    prompt_ids: List[int]
     completion_ids: List[int]
+    completion_mask: List[int]
 
 
 class MultiStepEnv(Environment):
@@ -67,29 +69,28 @@ class MultiStepEnv(Environment):
 
     def generate(
         self,
-        prompts: List[List[Dict[str, Any]]],
+        inputs: List[Input],
         llm: LLM,
         sampling_params: SamplingParams,
-        inputs: List[Dict[str, Any]],
         **kwargs: Any,
-    ) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
+    ) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Message]]]:
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
 
         # initialize state variables
         all_completed = False
-        states = [
+        states: List[State] = [
             {
-                "messages": m,
-                "n_prompt_messages": len(m),
-                "input": input,
-                "prompt_ids": [],
                 "completed": False,
+                "input": input,
+                "messages": input["prompt"],
+                "n_prompt_messages": len(input["prompt"]),
+                "prompt_ids": [],
                 "completion_ids": [],
                 "completion_mask": [],
             }
-            for m, input in zip(prompts, inputs)
+            for input in inputs
         ]
 
         # main loop
@@ -109,10 +110,10 @@ class MultiStepEnv(Environment):
 
     def _step(
         self,
-        states: List[Dict[str, Any]],
+        states: List[State],
         llm: LLM,
         sampling_params: SamplingParams,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[State]:
         live_indices = [i for i, s in enumerate(states) if not s["completed"]]
         messages_to_step = [states[i]["messages"] for i in live_indices]
         llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False)  # type: ignore

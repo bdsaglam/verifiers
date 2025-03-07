@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Sequence
 from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
+from verifiers.models import Input
+
 from ..imports import LLM, SamplingParams  # type: ignore
 
 
@@ -30,10 +32,9 @@ class Environment(ABC):
     @abstractmethod
     def generate(
         self,
-        prompts: List[List[Dict[str, Any]]],
+        inputs: List[Input],
         llm: LLM,
         sampling_params: SamplingParams,
-        inputs: List[Dict[str, Any]],
         **kwargs: Any,
     ) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
         pass

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Sequence
 from datasets import Dataset
 
 from verifiers.envs.environment import Environment
+from verifiers.models import Input
 
 from ..imports import LLM, SamplingParams  # type: ignore
 
@@ -35,18 +36,22 @@ class SimpleEnv(Environment):
 
     def generate(
         self,
-        prompts: List[List[Dict[str, Any]]],
+        inputs: List[Input],
         llm: LLM,
         sampling_params: SamplingParams,
-        inputs: List[Dict[str, Any]],
         **kwargs: Any,
     ) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
-        states = [{"messages": m, "prompt_ids": [], "completion_ids": [], "completion_mask": []} for m in prompts]
+
+        states = [
+            {"messages": input["prompt"], "prompt_ids": [], "completion_ids": [], "completion_mask": []}
+            for input in inputs
+        ]
 
         # get completions
+        prompts = [input["prompt"] for input in inputs]
         completions = llm.chat(prompts, sampling_params=custom_sp, use_tqdm=False)  # type: ignore
         for i, completion in enumerate(completions):
             states[i]["messages"].append({"role": "assistant", "content": completion.outputs[0].text})

@@ -17,6 +17,7 @@ from trl.import_utils import is_rich_available
 from trl.trainer.utils import pad
 
 from verifiers.envs.environment import Environment
+from verifiers.models import Input
 from verifiers.utils.logging_utils import print_prompt_completions_sample
 
 if is_peft_available():
@@ -65,11 +66,11 @@ class GRPOEnvTrainer(GRPOTrainer):
 
     def _generate_and_score_completions(
         self,
-        inputs: dict[str, Union[torch.Tensor, Any]],
+        inputs: list[Input],
     ) -> dict[str, Union[torch.Tensor, Any]]:
         device = self.accelerator.device
-        prompts = [x["prompt"] for x in inputs]  # type: ignore
-        prompts_text = [maybe_apply_chat_template(example, self.processing_class)["prompt"] for example in inputs]  # type: ignore
+        prompts = [x["prompt"] for x in inputs]
+        prompts_text = [maybe_apply_chat_template(example, self.processing_class)["prompt"] for example in inputs]
         prompt_inputs = self.processing_class(
             prompts_text,
             return_tensors="pt",
@@ -89,23 +90,21 @@ class GRPOEnvTrainer(GRPOTrainer):
             self._last_loaded_step = self.state.global_step
 
         # Gather the original prompts in message dict form, not the text form
-        all_prompts = gather_object(prompts)
         all_inputs = gather_object(inputs)
         if self.accelerator.is_main_process:
             env_result = self.env.generate(
-                prompts=all_prompts,
+                inputs=all_inputs,
                 llm=self.llm,
                 sampling_params=self.sampling_params,
-                inputs=all_inputs,
             )
             completion_ids = env_result["ids"]
             completion_messages = env_result["messages"]
             completion_mask = env_result["mask"]
 
         else:
-            completion_ids = [None] * len(all_prompts)
-            completion_messages = [None] * len(all_prompts)
-            completion_mask = [None] * len(all_prompts)
+            completion_ids = [None] * len(all_inputs)
+            completion_messages = [None] * len(all_inputs)
+            completion_mask = [None] * len(all_inputs)
 
         completion_ids = broadcast_object_list(completion_ids, from_process=0)
         completion_messages = broadcast_object_list(completion_messages, from_process=0)
