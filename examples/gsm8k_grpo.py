@@ -83,6 +83,7 @@ def create_environment(
             tokenizer=tokenizer,
             few_shot=CODE_FEW_SHOT[0],
             few_shot_prob=1.0,
+            n_jobs=32,
         )
     elif env_type.lower() == "tool":
         log.info("Initializing ToolEnv environment")
@@ -100,6 +101,7 @@ def create_environment(
             tools=[calculator],
             assistant_parser=assistant_parser,
             env_parser=env_parser,
+            n_jobs=32,
         )
     else:
         raise ValueError(f"Unknown environment type: {env_type}. Choose 'code' or 'tool'.")

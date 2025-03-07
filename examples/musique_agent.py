@@ -12,7 +12,7 @@ from trl import GRPOConfig
 import verifiers as vf
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
-from verifiers.rubrics.qa import musique_em_reward_func, musique_f1_reward_func
+from verifiers.rubrics.musique import musique_em_reward_func, musique_f1_reward_func
 from verifiers.tools import make_retrieve_tool
 
 load_dotenv()

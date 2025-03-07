@@ -9,22 +9,18 @@ license = {text = "MIT"}
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "pydantic",
+    "datasets",
     "torch",
     "deepspeed==0.15.3",
     "accelerate",
     "peft",
+    "joblib>=1.4.2",
     "wandb",
     "rich",
-    "python-dotenv",
-    "duckduckgo-search",
     "trl @ git+https://github.com/huggingface/trl.git",
     "liger-kernel>=0.5.2",
     "vllm==0.7.0",
-    "e2b-code-interpreter",
-    "docker",
-    "numpy",
-    "scipy",
-    "sympy",
+    "python-dotenv",
 ]
 
 [dependency-groups]
@@ -35,4 +31,14 @@ retrieve = [
     "bm25s[full]",
     "pystemmer",
     "httpx",
+]
+search = [
+    "duckduckgo-search",
+]
+codex = [
+    "e2b-code-interpreter",
+    "docker",
+    "numpy",
+    "scipy",
+    "sympy",
 ]
