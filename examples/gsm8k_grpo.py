@@ -136,6 +136,7 @@ def train(
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
     suffix: str = typer.Option("grpo", "--suffix", help="Custom suffix for the run name"),
+    report_to="wandb",
 ):
     """Train a model using GRPO for code generation or tool use."""
 
@@ -192,7 +193,7 @@ def train(
         logging_steps=1,
         log_on_each_node=False,
         log_completions=True,
-        report_to="wandb",
+        report_to=report_to,
         run_name=run_name,
         reward_weights=None,
         eval_strategy="steps",
