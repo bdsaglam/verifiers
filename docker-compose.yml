@@ -23,8 +23,10 @@ services:
       - DEFAULT_MODEL=flashrank
       - HOST=0.0.0.0
       - PORT=8000
+      - NUM_WORKERS=8
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
+      - ~/.cache/flashrank:/tmp/.cache/flashrank
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

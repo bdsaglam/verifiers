@@ -25,8 +25,12 @@ async def lifespan(app: FastAPI):
     """Initialize the default model at startup."""
     logger.info("Warming up default model...")
     try:
-        get_reranker(DEFAULT_MODEL)
+        reranker = get_reranker(DEFAULT_MODEL)
         logger.info(f"Successfully loaded default model: {DEFAULT_MODEL}")
+        _ = await reranker.rank_async(
+            query="What is the capital of France?",
+            docs=["Paris is the capital of France.", "Paris is the capital of France."],
+        )
     except Exception as e:
         logger.error(f"Failed to load default model at startup: {e}")
     yield
@@ -46,6 +50,7 @@ app.add_middleware(
 # Load environment variables
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
+CACHE_DIR = "/tmp/.cache/flashrank"
 
 
 class RerankerNotFoundError(Exception):
@@ -60,7 +65,11 @@ def get_reranker(model_id: str) -> BaseRanker:
     if model_id not in rerankers:
         logger.info(f"Loading reranker model: {model_id}")
         try:
-            rerankers[model_id] = Reranker(model_name, model_type=model_type)
+            rerankers[model_id] = Reranker(
+                model_name,
+                model_type=model_type,
+                cache_dir=CACHE_DIR,
+            )
             if rerankers[model_id] is None:
                 raise RerankerNotFoundError("Reranker could not be initialized")
         except Exception as e:
