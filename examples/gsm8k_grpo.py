@@ -10,15 +10,9 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
-from verifiers.codex.local import LocalPythonExecutor
 from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
-from verifiers.rubrics import Rubric
-from verifiers.rubrics.code import make_code_execution_reward_func
-from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
-from verifiers.rubrics.math import int_answer_reward_func, numeric_answer_reward_func, numerical_equivalence_reward_func
-from verifiers.rubrics.qa import exact_answer_reward_func
-from verifiers.rubrics.tool import make_tool_use_reward_func
+from verifiers.rubrics.math import int_answer_reward_func, numerical_equivalence_reward_func
 
 load_dotenv()
 
@@ -79,10 +73,8 @@ def create_environment(
         else:
             raise ValueError(f"Unknown executor: {executor}")
 
-        code_tag = "code"
-        output_tag = "output"
-        assistant_parser = XMLParser(fields=["think", (code_tag, "answer")])
-        env_parser = XMLParser(fields=[output_tag])
+        assistant_parser = XMLParser(fields=["think", ("code", "answer")])
+        env_parser = XMLParser(fields=["output"])
 
         vf_env = vf.CodeEnv(
             code_executor=code_executor,
@@ -91,23 +83,13 @@ def create_environment(
             tokenizer=tokenizer,
             few_shot=CODE_FEW_SHOT[0],
             few_shot_prob=1.0,
-            rubric=Rubric(
-                reward_funcs=[
-                    make_xml_reward_func(assistant_parser),
-                    make_format_reward_func(assistant_parser),
-                    exact_answer_reward_func,
-                    make_code_execution_reward_func(code_tag=code_tag, output_tag=output_tag),
-                ]
-            ),
         )
     elif env_type.lower() == "tool":
         log.info("Initializing ToolEnv environment")
         from verifiers.tools import calculator
 
-        tool_tag = "tool"
-        result_tag = "result"
-        assistant_parser = XMLParser(fields=["think", (tool_tag, "answer")])
-        env_parser = XMLParser(fields=[result_tag])
+        assistant_parser = XMLParser(fields=["think", ("tool", "answer")])
+        env_parser = XMLParser(fields=["result"])
 
         vf_env = vf.ToolEnv(
             train_dataset=train_dataset,
@@ -118,15 +100,6 @@ def create_environment(
             tools=[calculator],
             assistant_parser=assistant_parser,
             env_parser=env_parser,
-            rubric=Rubric(
-                reward_funcs=[
-                    make_xml_reward_func(assistant_parser),
-                    make_format_reward_func(assistant_parser),
-                    int_answer_reward_func,
-                    numerical_equivalence_reward_func,
-                    make_tool_use_reward_func(tool_tag=tool_tag, result_tag=result_tag),
-                ]
-            ),
         )
     else:
         raise ValueError(f"Unknown environment type: {env_type}. Choose 'code' or 'tool'.")
@@ -236,11 +209,16 @@ def train(
     )
 
     # Initialize trainer
+    reward_funcs = [
+        int_answer_reward_func,
+        numerical_equivalence_reward_func,
+        *vf_env.get_reward_funcs(),
+    ]
     trainer = vf.GRPOEnvTrainer(
         model=model,
         peft_config=peft_config,
         env=vf_env,
-        reward_funcs=vf_env.get_rubric(),
+        reward_funcs=reward_funcs,
         processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),

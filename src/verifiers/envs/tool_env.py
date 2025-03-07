@@ -10,7 +10,6 @@ from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
-from verifiers.rubrics import Rubric
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 from verifiers.rubrics.tool import make_tool_use_reward_func
 
@@ -25,7 +24,6 @@ class ToolEnv(MultiStepEnv):
         system_prompt: str = DEFAULT_TOOL_PROMPT_TEMPLATE,
         assistant_parser: XMLParser = XMLParser(fields=["think", ("tool", "answer")]),
         env_parser: XMLParser = XMLParser(fields=["result"]),
-        rubric: Rubric | None = None,
         few_shot: List[Dict[str, str]] = [],
         few_shot_prob: float = 0.5,
         additional_sampling_args={},
@@ -86,13 +84,11 @@ class ToolEnv(MultiStepEnv):
         )
         self.assistant_parser = assistant_parser
         self.env_parser = env_parser
-        self.rubric = rubric or Rubric(
-            reward_funcs=[
-                make_xml_reward_func(assistant_parser),
-                make_format_reward_func(assistant_parser),
-                make_tool_use_reward_func(assistant_parser=self.assistant_parser, env_parser=self.env_parser),
-            ],
-        )
+        self.reward_funcs = [
+            make_xml_reward_func(assistant_parser),
+            make_format_reward_func(assistant_parser),
+            make_tool_use_reward_func(tool_tag="tool", result_tag="result"),
+        ]
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
@@ -102,8 +98,8 @@ class ToolEnv(MultiStepEnv):
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
 
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
-        return self.rubric.get_reward_funcs()
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
+        return self.reward_funcs
 
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         messages = state["messages"]

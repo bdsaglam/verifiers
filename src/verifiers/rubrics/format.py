@@ -2,7 +2,7 @@ from typing import List
 
 from verifiers.parsers.xml_parser import XMLParser
 
-from verifiers.rubrics.models import RewardFunc
+from verifiers.models import RewardFunc
 
 
 def make_xml_reward_func(parser: XMLParser) -> RewardFunc:

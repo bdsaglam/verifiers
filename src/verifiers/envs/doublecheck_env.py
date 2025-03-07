@@ -4,8 +4,10 @@ from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
+from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import DOUBLECHECK_FEW_SHOT, SIMPLE_PROMPT
-from verifiers.rubrics.math import MathRubric
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.math import int_answer_reward_func, numerical_equivalence_reward_func
 from verifiers.utils import preprocess_dataset
 
 
@@ -15,6 +17,7 @@ class DoubleCheckEnv(MultiStepEnv):
         dataset: str = "gsm8k",
         system_prompt: str = SIMPLE_PROMPT,
         few_shot: List[Dict[str, str]] = DOUBLECHECK_FEW_SHOT[0],
+        parser: XMLParser = XMLParser(fields=["think", "answer"]),
         **kwargs,
     ):
         sampling_args = {
@@ -28,10 +31,16 @@ class DoubleCheckEnv(MultiStepEnv):
         self.dataset = preprocess_dataset(
             dataset_name=dataset, split="train", system_prompt=system_prompt, few_shot=few_shot
         )
-        self.rubric = MathRubric()
+        self.parser = parser
+        self.reward_funcs = [
+            numerical_equivalence_reward_func,
+            int_answer_reward_func,
+            make_xml_reward_func(parser),
+            make_format_reward_func(parser),
+        ]
 
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
-        return self.rubric.get_reward_funcs()
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
+        return self.reward_funcs
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset

@@ -11,14 +11,9 @@ from trl import GRPOConfig
 
 import verifiers as vf
 from verifiers.envs.tool_env import ToolEnv
-from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
-from verifiers.rubrics import Rubric
-from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 from verifiers.rubrics.qa import musique_em_reward_func, musique_f1_reward_func
-from verifiers.rubrics.tool import make_tool_use_reward_func
 from verifiers.tools import make_retrieve_tool
-
 
 load_dotenv()
 
@@ -62,9 +57,6 @@ def create_environment(
     """
     log.info("Initializing the environment")
 
-    assistant_parser = XMLParser(fields=["think", ("tool", "answer")])
-    env_parser = XMLParser(fields=["result"])
-
     vf_env = ToolEnv(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -74,15 +66,6 @@ def create_environment(
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         max_steps=20,
-        rubric=Rubric(
-            reward_funcs=[
-                make_xml_reward_func(assistant_parser),
-                make_format_reward_func(assistant_parser),
-                make_tool_use_reward_func(assistant_parser=assistant_parser, env_parser=env_parser),
-                musique_em_reward_func,
-                musique_f1_reward_func,
-            ]
-        ),
     )
 
     return vf_env
@@ -190,11 +173,16 @@ def train(
     )
 
     # Initialize trainer
+    reward_funcs = [
+        musique_em_reward_func,
+        musique_f1_reward_func,
+        *vf_env.get_reward_funcs(),
+    ]
     trainer = vf.GRPOEnvTrainer(
         model=model,
         peft_config=peft_config,
         env=vf_env,
-        reward_funcs=vf_env.get_rubric(),
+        reward_funcs=reward_funcs,
         processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),

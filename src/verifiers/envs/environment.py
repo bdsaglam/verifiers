@@ -26,7 +26,7 @@ class Environment(ABC):
         pass
 
     @abstractmethod
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
         pass
 
     @abstractmethod

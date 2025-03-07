@@ -17,7 +17,7 @@ from trl.import_utils import is_rich_available
 from trl.trainer.utils import pad
 
 from verifiers.envs.environment import Environment
-from verifiers.models import Input
+from verifiers.models import Input, RewardFunc
 from verifiers.utils.logging_utils import print_prompt_completions_sample
 
 if is_peft_available():
@@ -25,8 +25,6 @@ if is_peft_available():
 
 if is_wandb_available():
     import wandb
-
-RewardFunc = Union[str, PreTrainedModel, Callable[[list, list], list[float]]]
 
 
 class GRPOEnvTrainer(GRPOTrainer):

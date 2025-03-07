@@ -1,7 +1,7 @@
 from typing import Dict, List
 
+from verifiers.models import RewardFunc
 from verifiers.parsers import XMLParser
-from verifiers.rubrics.models import RewardFunc
 
 
 def make_code_execution_reward_func(code_tag: str = "code", output_tag: str = "output") -> RewardFunc:

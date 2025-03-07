@@ -9,7 +9,8 @@ from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import CODE_FEW_SHOT, CODE_PROMPT
-from verifiers.rubrics import Rubric
+from verifiers.rubrics.code import make_code_execution_reward_func
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,6 @@ class CodeEnv(MultiStepEnv):
         self,
         code_executor: CodeExecutor,
         tokenizer: Any,
-        rubric: Rubric,
         train_dataset: Dataset,
         eval_dataset: Dataset | None = None,
         system_prompt: str = CODE_PROMPT,
@@ -81,7 +81,11 @@ class CodeEnv(MultiStepEnv):
         )
         self.assistant_parser = parser
         self.env_parser = env_parser
-        self.rubric = rubric
+        self.reward_funcs = [
+            make_xml_reward_func(self.assistant_parser),
+            make_format_reward_func(self.assistant_parser),
+            make_code_execution_reward_func(code_tag="code", output_tag="output"),
+        ]
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
@@ -91,7 +95,7 @@ class CodeEnv(MultiStepEnv):
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
 
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
         return self.rubric.get_reward_funcs()
 
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:

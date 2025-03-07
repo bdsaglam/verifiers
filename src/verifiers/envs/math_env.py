@@ -6,9 +6,9 @@ from trl.trainer.grpo_trainer import RewardFunc
 from verifiers.envs.simple_env import SimpleEnv
 from verifiers.parsers import XMLParser
 from verifiers.prompts import MATH_FEW_SHOT, SIMPLE_PROMPT
-from verifiers.rubrics.math import MathRubric
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.math import int_answer_reward_func, numerical_equivalence_reward_func
 from verifiers.utils import preprocess_dataset
-
 
 
 class MathEnv(SimpleEnv):
@@ -24,10 +24,18 @@ class MathEnv(SimpleEnv):
         self.parser = XMLParser(fields=fields)
         self.dataset_name = dataset
         self.dataset = preprocess_dataset(
-            dataset_name=dataset, split="train", system_prompt=system_prompt, few_shot=few_shot
+            dataset_name=dataset,
+            split="train",
+            system_prompt=system_prompt,
+            few_shot=few_shot,
         )
         self.eval_dataset = None
-        self.rubric = MathRubric()
+        self.reward_funcs = [
+            numerical_equivalence_reward_func,
+            int_answer_reward_func,
+            make_xml_reward_func(self.parser),
+            make_format_reward_func(self.parser),
+        ]
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
@@ -41,5 +49,5 @@ class MathEnv(SimpleEnv):
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
 
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
         return self.rubric.get_reward_funcs()
