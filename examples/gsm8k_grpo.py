@@ -10,6 +10,7 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
+from verifiers.codex.local import LocalPythonExecutor
 from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
 from verifiers.rubrics import Rubric
@@ -58,13 +59,24 @@ def create_environment(
     Returns:
         A tuple containing the initialized environment and a default suffix for run naming
     """
-    if env_type.lower() == "code":
-        # from verifiers.codex.docker import DockerPythonExecutor
-        from verifiers.codex.e2b import E2BPythonExecutor
-        # from verifiers.codex.local import LocalPythonExecutor
-
+    if env_type.startswith("code"):
         log.info("Initializing CodeEnv environment")
-        code_executor = E2BPythonExecutor()
+
+        executor = env_type.split("/", 1)[-1] or "docker"
+        if executor == "e2b":
+            from verifiers.codex.e2b import E2BPythonExecutor
+
+            code_executor = E2BPythonExecutor()
+        elif executor == "docker":
+            from verifiers.codex.docker import DockerPythonExecutor
+
+            code_executor = DockerPythonExecutor()
+        elif executor == "local":
+            from verifiers.codex.local import LocalPythonExecutor
+
+            code_executor = LocalPythonExecutor()
+        else:
+            raise ValueError(f"Unknown executor: {executor}")
 
         code_tag = "code"
         output_tag = "output"
