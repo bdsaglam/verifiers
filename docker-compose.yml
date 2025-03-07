@@ -23,7 +23,7 @@ services:
       - DEFAULT_MODEL=flashrank
       - HOST=0.0.0.0
       - PORT=8000
-      - NUM_WORKERS=8
+      - WEB_CONCURRENCY=8
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ~/.cache/flashrank:/tmp/.cache/flashrank

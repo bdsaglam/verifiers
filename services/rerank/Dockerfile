@@ -22,7 +22,7 @@ COPY . .
 EXPOSE 8000
 
 # Calculate number of workers based on CPU cores
-ENV NUM_WORKERS=1
+ENV WEB_CONCURRENCY=1
 
 # Command to run the application with Gunicorn
-CMD ["gunicorn", "main:app", "--workers", "${NUM_WORKERS}", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-"] 
+CMD ["gunicorn", "main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-"] 
