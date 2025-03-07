@@ -24,7 +24,7 @@ class CodeEnv(MultiStepEnv):
         eval_dataset: Dataset | None = None,
         system_prompt: str = CODE_PROMPT,
         few_shot: List[Dict[str, str]] = CODE_FEW_SHOT[0],
-        few_shot_prob: float = 1.0,
+        few_shot_prob: float = 0.5,
         parser: XMLParser = XMLParser(fields=["think", ("code", "answer")]),
         env_parser: XMLParser = XMLParser(fields=["output"]),
         additional_sampling_args={},
@@ -74,7 +74,7 @@ class CodeEnv(MultiStepEnv):
                 dataset=eval_dataset,
                 system_prompt=system_prompt,
                 few_shot=few_shot,
-                few_shot_prob=1.0,
+                few_shot_prob=few_shot_prob,
             )
             if eval_dataset
             else None
