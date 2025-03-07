@@ -17,7 +17,7 @@ def numeric_answer_reward_func(completions, **kwargs) -> List[float]:
     return [1.0 if str(r).strip().isnumeric() else 0.0 for r in responses]
 
 
-def safe_float(s: str) -> float:
+def safe_float(s: str) -> float | None:
     try:
         return float(s)
     except ValueError:
@@ -26,7 +26,7 @@ def safe_float(s: str) -> float:
 
 def numerical_equivalence_reward_func(completions, answer, **kwargs) -> List[float]:
     responses = [get_last_answer(c) for c in completions]
-    return [1.0 if safe_float(r) == a else 0.0 for r, a in zip(responses, answer)]
+    return [1.0 if safe_float(str(r)) == a else 0.0 for r, a in zip(responses, answer)]
 
 
 class MathRubric(Rubric):
