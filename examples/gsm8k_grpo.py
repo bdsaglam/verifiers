@@ -16,6 +16,7 @@ from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
 from verifiers.rubrics import Rubric
 from verifiers.rubrics.code import make_code_execution_reward_func
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.math import int_answer_reward_func, numeric_answer_reward_func, numerical_equivalence_reward_func
 from verifiers.rubrics.qa import exact_answer_reward_func
 from verifiers.rubrics.tool import make_tool_use_reward_func
 
@@ -121,7 +122,8 @@ def create_environment(
                 reward_funcs=[
                     make_xml_reward_func(assistant_parser),
                     make_format_reward_func(assistant_parser),
-                    exact_answer_reward_func,
+                    int_answer_reward_func,
+                    numerical_equivalence_reward_func,
                     make_tool_use_reward_func(tool_tag=tool_tag, result_tag=result_tag),
                 ]
             ),
