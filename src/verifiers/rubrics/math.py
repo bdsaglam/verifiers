@@ -24,4 +24,4 @@ def safe_float(s: str, thousands_separator: str = ",") -> float | None:
 
 def numerical_equivalence_reward_func(completions, answer, **kwargs) -> List[float]:
     responses = [get_last_answer(c) for c in completions]
-    return [1.0 if safe_float(str(r)) == float(str(a)) else 0.0 for r, a in zip(responses, answer)]
+    return [1.0 if safe_float(str(r)) == safe_float(str(a)) else 0.0 for r, a in zip(responses, answer)]
