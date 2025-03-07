@@ -3,7 +3,6 @@ from typing import List
 from verifiers.parsers import XMLParser
 from verifiers.rubrics import Rubric
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
-from verifiers.rubrics.qa import exact_answer_reward_func
 from verifiers.rubrics.utils import get_last_answer
 
 
@@ -34,7 +33,7 @@ class MathRubric(Rubric):
     def __init__(self, parser: XMLParser = XMLParser(fields=["think", "answer"])):
         super().__init(
             reward_funcs=[
-                exact_answer_reward_func,
+                numerical_equivalence_reward_func,
                 int_answer_reward_func,
                 make_xml_reward_func(parser),
                 make_format_reward_func(parser),
