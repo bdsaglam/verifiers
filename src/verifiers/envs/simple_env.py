@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Sequence
 from datasets import Dataset
 
 from verifiers.envs.environment import Environment
+from verifiers.models import Input
 
 from ..imports import LLM, SamplingParams  # type: ignore
 
@@ -24,29 +25,33 @@ class SimpleEnv(Environment):
     def get_eval_dataset(self, **kwargs: Any) -> Dataset | None:
         pass
 
-    def format_prompt(self, prompt: str, fewshot_prob: float = 1.0) -> List[Dict[str, str]]:
+    def format_prompt(self, prompt: str, few_shot_prob: float = 1.0) -> List[Dict[str, str]]:
         messages = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
-        if self.few_shot and random.random() < fewshot_prob:
+        if self.few_shot and random.random() < few_shot_prob:
             messages.extend(self.few_shot)
         messages.append({"role": "user", "content": prompt})
         return messages
 
     def generate(
         self,
-        prompts: List[List[Dict[str, Any]]],
+        inputs: List[Input],
         llm: LLM,
         sampling_params: SamplingParams,
-        inputs: List[Dict[str, Any]],
         **kwargs: Any,
     ) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
-        states = [{"messages": m, "prompt_ids": [], "completion_ids": [], "completion_mask": []} for m in prompts]
+
+        states = [
+            {"messages": input["prompt"], "prompt_ids": [], "completion_ids": [], "completion_mask": []}
+            for input in inputs
+        ]
 
         # get completions
+        prompts = [input["prompt"] for input in inputs]
         completions = llm.chat(prompts, sampling_params=custom_sp, use_tqdm=False)  # type: ignore
         for i, completion in enumerate(completions):
             states[i]["messages"].append({"role": "assistant", "content": completion.outputs[0].text})

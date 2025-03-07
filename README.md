@@ -40,7 +40,7 @@ trainer = vf.GRPOEnvTrainer(
     model=model,
     processing_class=tokenizer,
     env=vf_env,
-    reward_funcs=vf_env.get_rubric(),
+    reward_funcs=vf_env.get_reward_funcs(),
     args=vf.get_default_grpo_config(run_name="gsm8k", num_gpus=2),
     train_dataset=vf_env.get_dataset(),
 )
@@ -53,7 +53,7 @@ To create your own multi-step environment, inherit from `MultiStepEnv` and imple
 def get_dataset(self, **kwargs: Any) -> Dataset:
     pass
 
-def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
+def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
     pass
 
 def is_completed(self, messages: List[Dict[str, str]], **kwargs: Any) -> bool:

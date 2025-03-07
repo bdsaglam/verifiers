@@ -9,7 +9,8 @@ from verifiers.datasets.utils import prepare_dataset_for_env
 from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import CODE_FEW_SHOT, CODE_PROMPT
-from verifiers.rubrics import CodeRubric
+from verifiers.rubrics.code import make_code_execution_reward_func
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,9 @@ class CodeEnv(MultiStepEnv):
         eval_dataset: Dataset | None = None,
         system_prompt: str = CODE_PROMPT,
         few_shot: List[Dict[str, str]] = CODE_FEW_SHOT[0],
+        few_shot_prob: float = 0.5,
+        parser: XMLParser = XMLParser(fields=["think", ("code", "answer")]),
+        env_parser: XMLParser = XMLParser(fields=["output"]),
         additional_sampling_args={},
         mask_env_response: bool = True,
         max_steps: int = 5,
@@ -63,21 +67,25 @@ class CodeEnv(MultiStepEnv):
             dataset=train_dataset,
             system_prompt=system_prompt,
             few_shot=few_shot,
-            fewshot_prob=1.0,
+            few_shot_prob=few_shot_prob,
         )
         self.eval_dataset = (
             prepare_dataset_for_env(
                 dataset=eval_dataset,
                 system_prompt=system_prompt,
                 few_shot=few_shot,
-                fewshot_prob=1.0,
+                few_shot_prob=few_shot_prob,
             )
             if eval_dataset
             else None
         )
-        self.llm_parser = XMLParser(fields=["reasoning", ("code", "answer")])
-        self.env_parser = XMLParser(fields=["output"])
-        self.rubric = CodeRubric(parser=self.llm_parser, env_parser=self.env_parser)
+        self.assistant_parser = parser
+        self.env_parser = env_parser
+        self.reward_funcs = [
+            make_xml_reward_func(self.assistant_parser),
+            make_format_reward_func(self.assistant_parser),
+            make_code_execution_reward_func(code_tag="code", output_tag="output"),
+        ]
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
@@ -87,7 +95,7 @@ class CodeEnv(MultiStepEnv):
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
 
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
         return self.rubric.get_reward_funcs()
 
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
@@ -98,9 +106,9 @@ class CodeEnv(MultiStepEnv):
             return True
 
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
-            return hasattr(parsed, "answer") and parsed.answer is not None
+            return getattr(parsed, "answer", None) is not None
         except Exception:
             return False
 
@@ -114,7 +122,7 @@ class CodeEnv(MultiStepEnv):
     def env_response(self, state: State, **kwargs: Any) -> Dict[str, str]:
         messages = state["messages"]
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid code field (not just None from failed parsing)
             if code := getattr(parsed, "code", None):
                 output = self.run_code(code)

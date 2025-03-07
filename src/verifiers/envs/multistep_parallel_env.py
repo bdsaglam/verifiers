@@ -1,3 +1,4 @@
+import multiprocessing as mp
 from abc import abstractmethod
 from typing import Any, Dict, List, Sequence, TypedDict, Union
 
@@ -114,41 +115,59 @@ class MultiStepEnv(Environment):
         llm: LLM,
         sampling_params: SamplingParams,
     ) -> List[State]:
-        live_indices = [i for i, s in enumerate(states) if not s["completed"]]
-        messages_to_step = [states[i]["messages"] for i in live_indices]
-        llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False)  # type: ignore
 
-        for i, j in enumerate(live_indices):
-            if len(states[j]["prompt_ids"]) == 0:
-                states[j]["prompt_ids"] = llm_responses[i].prompt_token_ids
-            states[j]["messages"].append({"role": "assistant", "content": llm_responses[i].outputs[0].text})
+        # Define worker function to process each state
+        def process_state(args):
+            idx, state, llm_response = args
+
+            if len(state["prompt_ids"]) == 0:
+                state["prompt_ids"] = llm_response.prompt_token_ids
+            state["messages"].append({"role": "assistant", "content": llm_response.outputs[0].text})
 
             # get token lengths of env response and new completion
-            total_prev_len = len(states[j]["prompt_ids"]) + len(states[j]["completion_ids"])
-            env_response_len = len(list(llm_responses[i].prompt_token_ids)) - total_prev_len  # type: ignore
-            new_completion_len = len(llm_responses[i].outputs[0].token_ids)
+            total_prev_len = len(state["prompt_ids"]) + len(state["completion_ids"])
+            env_response_len = len(list(llm_response.prompt_token_ids)) - total_prev_len  # type: ignore
+            new_completion_len = len(llm_response.outputs[0].token_ids)
 
             # update completion masks
-            states[j]["completion_mask"].extend([self.env_mask] * env_response_len)
-            states[j]["completion_mask"].extend([1] * new_completion_len)
+            state["completion_mask"].extend([self.env_mask] * env_response_len)
+            state["completion_mask"].extend([1] * new_completion_len)
 
             # update completion ids
-            states[j]["completion_ids"] = list(llm_responses[i].prompt_token_ids)  # type: ignore
-            states[j]["completion_ids"].extend(list(llm_responses[i].outputs[0].token_ids))
-            states[j]["completion_ids"] = states[j]["completion_ids"][len(states[j]["prompt_ids"]) :]
+            state["completion_ids"] = list(llm_response.prompt_token_ids)  # type: ignore
+            state["completion_ids"].extend(list(llm_response.outputs[0].token_ids))
+            state["completion_ids"] = state["completion_ids"][len(state["prompt_ids"]) :]
 
-            if (
-                self._is_reached_max_steps(states[j])
-                or self.is_completed(states[j], completion_output=llm_responses[i].outputs[0])
-                or len(states[j]["completion_ids"]) > sampling_params.max_tokens
-            ):  # type: ignore
-                states[j]["completed"] = True
-                states[j]["completion_ids"] = states[j]["completion_ids"][: sampling_params.max_tokens]
-                states[j]["completion_mask"] = states[j]["completion_mask"][: sampling_params.max_tokens]
+            is_completed = (
+                self._is_reached_max_steps(state)
+                or self.is_completed(state, completion_output=llm_response.outputs[0])
+                or len(state["completion_ids"]) > sampling_params.max_tokens
+            )  # type: ignore
+
+            if is_completed:
+                state["completed"] = True
+                state["completion_ids"] = state["completion_ids"][: sampling_params.max_tokens]
+                state["completion_mask"] = state["completion_mask"][: sampling_params.max_tokens]
             else:
-                states[j]["messages"].append(self.env_response(states[j]))
+                state["messages"].append(self.env_response(state))
 
-            assert len(states[j]["completion_mask"]) == len(states[j]["completion_ids"])
+            assert len(state["completion_mask"]) == len(state["completion_ids"])
+            return idx, state
+
+        live_indices = [i for i, state in enumerate(states) if not state["completed"]]
+        
+        # Generate LLM responses for incomplete states
+        messages_to_step = [states[idx]["messages"] for idx in live_indices]
+        llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False)  # type: ignore
+
+        # Generate env responses in parallel
+        args_list = [(idx, states[idx], llm_response) for idx, llm_response in zip(live_indices, llm_responses)]
+        with mp.Pool(processes=mp.cpu_count() // 2) as pool:
+            results = pool.map(process_state, args_list)
+
+        # Update states with results
+        for idx, updated_state in results:
+            states[idx] = updated_state
 
         return states
 

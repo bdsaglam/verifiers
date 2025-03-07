@@ -10,6 +10,10 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
+from verifiers.envs.tool_env import ToolEnv
+from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
+from verifiers.rubrics.qa import musique_em_reward_func, musique_f1_reward_func
+from verifiers.tools import make_retrieve_tool
 
 load_dotenv()
 
@@ -37,6 +41,7 @@ def create_environment(
     train_dataset: Dataset,
     eval_dataset: Dataset,
     tokenizer: Any,
+    retriever: str,
 ):
     """
     Create and initialize the appropriate environment based on the specified type.
@@ -45,22 +50,22 @@ def create_environment(
         train_dataset: Dataset for training
         eval_dataset: Dataset for evaluation
         tokenizer: Tokenizer instance
+        retriever: Retriever to use
 
     Returns:
         A tuple containing the initialized environment and a default suffix for run naming
     """
-    log.info("Initializing ToolEnv environment")
-    from verifiers.envs.tool_env import ToolEnv
-    from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
-    from verifiers.tools import make_retrieve_tool
+    log.info("Initializing the environment")
 
     vf_env = ToolEnv(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         few_shot=RETRIEVE_FEW_SHOT[0],
-        tools=[make_retrieve_tool(top_k=2)],
+        few_shot_prob=0.7,
+        tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
+        max_steps=20,
     )
 
     return vf_env
@@ -83,8 +88,8 @@ def train(
     eval_dataset_split: str = typer.Option("validation[:32]"),
     max_prompt_length: int = typer.Option(4096, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
-    num_generations: int = typer.Option(4, "-g", help="Number of generations per prompt"),
-    batch_size: int = typer.Option(16, "-bs", help="Per device batch size"),
+    num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
+    batch_size: int = typer.Option(32, "-bs", help="Per device batch size"),
     gradient_accumulation_steps: int = typer.Option(2, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
@@ -92,6 +97,7 @@ def train(
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
     suffix: str = typer.Option("grpo", "--suffix", help="Custom suffix for the run name"),
+    retriever: str = typer.Option("bm25", "--retriever", help="Retriever to use"),
 ):
     """Train a model using GRPO for code generation or tool use."""
 
@@ -116,6 +122,7 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
+        retriever=retriever,
     )
 
     # Use provided suffix or default based on env_type
@@ -131,7 +138,7 @@ def train(
         adam_beta1=0.9,
         adam_beta2=0.99,
         max_grad_norm=0.01,
-        num_iterations=1,  # steps per global batch (1 on-policy, 1 off-policy)
+        num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         beta=beta,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
@@ -166,11 +173,16 @@ def train(
     )
 
     # Initialize trainer
+    reward_funcs = [
+        musique_em_reward_func,
+        musique_f1_reward_func,
+        *vf_env.get_reward_funcs(),
+    ]
     trainer = vf.GRPOEnvTrainer(
         model=model,
         peft_config=peft_config,
         env=vf_env,
-        reward_funcs=vf_env.get_rubric(),
+        reward_funcs=reward_funcs,
         processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),

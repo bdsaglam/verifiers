@@ -7,10 +7,11 @@ from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.datasets.utils import prepare_dataset_for_env
-from verifiers.envs.multistep_env import MultiStepEnv, State, CompletionOutput
+from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
-from verifiers.rubrics import ToolRubric
+from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.tool import make_tool_use_reward_func
 
 
 class ToolEnv(MultiStepEnv):
@@ -21,7 +22,10 @@ class ToolEnv(MultiStepEnv):
         eval_dataset: Dataset | None = None,
         tools: List[Callable] = [],
         system_prompt: str = DEFAULT_TOOL_PROMPT_TEMPLATE,
+        assistant_parser: XMLParser = XMLParser(fields=["think", ("tool", "answer")]),
+        env_parser: XMLParser = XMLParser(fields=["result"]),
         few_shot: List[Dict[str, str]] = [],
+        few_shot_prob: float = 0.5,
         additional_sampling_args={},
         mask_env_response: bool = True,
         **kwargs,
@@ -66,32 +70,36 @@ class ToolEnv(MultiStepEnv):
             dataset=train_dataset,
             system_prompt=formatted_prompt,
             few_shot=few_shot,
-            fewshot_prob=1.0,
+            few_shot_prob=few_shot_prob,
         )
         self.eval_dataset = (
             prepare_dataset_for_env(
                 dataset=eval_dataset,
                 system_prompt=formatted_prompt,
                 few_shot=few_shot,
-                fewshot_prob=1.0,
+                few_shot_prob=few_shot_prob,
             )
             if eval_dataset
             else None
         )
-        self.rubric = ToolRubric()
-        self.llm_parser = XMLParser(fields=["reasoning", ("tool", "answer")])
-        self.env_parser = XMLParser(fields=["result"])
+        self.assistant_parser = assistant_parser
+        self.env_parser = env_parser
+        self.reward_funcs = [
+            make_xml_reward_func(assistant_parser),
+            make_format_reward_func(assistant_parser),
+            make_tool_use_reward_func(tool_tag="tool", result_tag="result"),
+        ]
 
     def get_dataset(self, **kwargs: Any) -> Dataset:
         return self.dataset
 
-    def get_eval_dataset(self, n: int = -1, **kwargs: Any) -> Dataset | None:
+    def get_eval_dataset(self, n: int = -1, **kwargs: Any) -> Dataset:
         if n > 0:
             return self.eval_dataset.shuffle().select(range(n))  # type: ignore
         return self.eval_dataset
 
-    def get_rubric(self, **kwargs: Any) -> List[RewardFunc]:
-        return self.rubric.get_reward_funcs()
+    def get_reward_funcs(self, **kwargs: Any) -> List[RewardFunc]:
+        return self.reward_funcs
 
     def is_completed(self, state: State, completion_output: CompletionOutput, **kwargs: Any) -> bool:
         messages = state["messages"]
@@ -101,9 +109,9 @@ class ToolEnv(MultiStepEnv):
             return True
 
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
-            return hasattr(parsed, "answer") and parsed.answer is not None
+            return getattr(parsed, "answer", None) is not None
         except Exception:
             return False
 
@@ -121,14 +129,17 @@ class ToolEnv(MultiStepEnv):
             if tool_name not in self.tools:
                 return f"Error: Unknown tool '{tool_name}'"
 
+            # Call the tool function with arguments
             tool_func = self.tools[tool_name]
             tool_args = command.get("args", {})
+            if isinstance(tool_args, dict):
+                result = tool_func(**tool_args, run_context=run_context)
+            else:
+                result = tool_func(tool_args, run_context=run_context)
 
-            # Call the tool function with arguments
-            result = tool_func(**tool_args, run_context=run_context)
             return str(result)
         except json.JSONDecodeError:
-            return "Error: Invalid JSON format"
+            return "Error: Invalid JSON inside <tool> tags"
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -136,10 +147,10 @@ class ToolEnv(MultiStepEnv):
         run_context = dict(input=state["input"])
         messages = state["messages"]
         try:
-            parsed = self.llm_parser.parse(messages[-1]["content"])
+            parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)
-            if hasattr(parsed, "tool") and parsed.tool is not None:
-                result = self.call_tool(parsed.tool, run_context=run_context)
+            if tool := getattr(parsed, "tool", None):
+                result = self.call_tool(tool, run_context=run_context)
                 if len(result.strip()) > 0:
                     return {
                         "role": "tool",

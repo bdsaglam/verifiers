@@ -7,7 +7,7 @@ def update_messages(
     messages: list[dict],
     system_prompt: str = None,
     few_shot: list[dict] = None,
-    fewshot_prob: float = 1.0,
+    few_shot_prob: float = 1.0,
 ) -> list[dict]:
     # Order: system prompt, few-shot examples (user, assistant, tool, etc.), user message
     suffix = []
@@ -21,7 +21,7 @@ def update_messages(
         messages.insert(0, {"role": "system", "content": system_prompt})
 
     # Add few-shot examples if they exist
-    if few_shot and random.random() < fewshot_prob:
+    if few_shot and random.random() < few_shot_prob:
         messages.extend(few_shot)
 
     messages.extend(suffix)
@@ -33,9 +33,9 @@ def prepare_example_for_env(
     example: dict,
     system_prompt: str = None,
     few_shot: list[dict] = None,
-    fewshot_prob: float = 1.0,
+    few_shot_prob: float = 1.0,
 ) -> dict:
-    example["prompt"] = update_messages(example["prompt"], system_prompt, few_shot, fewshot_prob)
+    example["prompt"] = update_messages(example["prompt"], system_prompt, few_shot, few_shot_prob)
     return example
 
 
@@ -43,6 +43,6 @@ def prepare_dataset_for_env(
     dataset: Dataset,
     system_prompt: str = None,
     few_shot: list[dict] = None,
-    fewshot_prob: float = 1.0,
+    few_shot_prob: float = 1.0,
 ) -> Dataset:
-    return dataset.map(lambda x: prepare_example_for_env(x, system_prompt, few_shot, fewshot_prob))
+    return dataset.map(lambda x: prepare_example_for_env(x, system_prompt, few_shot, few_shot_prob))
