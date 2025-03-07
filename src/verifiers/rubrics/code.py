@@ -10,7 +10,7 @@ def make_code_execution_reward_func(code_tag: str = "code", output_tag: str = "o
     env_parser = XMLParser(fields=[output_tag])
 
 
-    def code_execution_reward_func(self, completions: List[List[Dict[str, str]]], **kwargs) -> List[float]:
+    def code_execution_reward_func(completions: List[List[Dict[str, str]]], **kwargs) -> List[float]:
         """Reward function that checks code execution success at each step."""
 
         def check_execution(trajectory: List[Dict[str, str]]) -> float:
@@ -20,14 +20,13 @@ def make_code_execution_reward_func(code_tag: str = "code", output_tag: str = "o
             for i, msg in enumerate(trajectory):
                 if msg["role"] == "assistant":
                     parsed = assistant_parser.parse(msg["content"])
-                    if hasattr(parsed, code_tag) and parsed.code is not None:
+                    if getattr(parsed, code_tag, None):
                         total_code_steps += 1
                         # Look for the next user message (environment response)
                         if i + 1 < len(trajectory) and trajectory[i + 1]["role"] == "user":
                             env_response = trajectory[i + 1]["content"]
                             parsed_response = env_parser.parse(env_response)
-                            if hasattr(parsed_response, output_tag) and parsed_response.output is not None:
-                                output = parsed_response.output
+                            if output := getattr(parsed_response, output_tag, None):
                                 if len(output) > 0 and not output.startswith("Error:"):
                                     successful_executions += 1
 

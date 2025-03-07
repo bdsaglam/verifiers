@@ -115,7 +115,7 @@ class ToolEnv(MultiStepEnv):
         try:
             parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
-            return hasattr(parsed, "answer") and parsed.answer is not None
+            return getattr(parsed, "answer", None) is not None
         except Exception:
             return False
 
@@ -153,8 +153,8 @@ class ToolEnv(MultiStepEnv):
         try:
             parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)
-            if hasattr(parsed, "tool") and parsed.tool is not None:
-                result = self.call_tool(parsed.tool, run_context=run_context)
+            if tool := getattr(parsed, "tool", None):
+                result = self.call_tool(tool, run_context=run_context)
                 if len(result.strip()) > 0:
                     return {
                         "role": "tool",

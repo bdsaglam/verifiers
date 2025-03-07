@@ -100,15 +100,15 @@ def make_format_reward_func(parser: XMLParser) -> RewardFunc:
                 for i, (canonical, alternatives) in enumerate(parser._fields):
                     field_set_present = False
                     for alt in alternatives:
-                        if hasattr(parsed, alt) and getattr(parsed, alt) is not None:
+                        if val := getattr(parsed, alt, None):
                             has_any_field = True
                             fields_with_content += 1
                             total_fields += 1
                             field_set_present = True
                             
                             # Check if field exists in non-stripped version too (proper spacing)
-                            if not (hasattr(parsed_no_strip, alt) and 
-                                    getattr(parsed_no_strip, alt) is not None):
+                            val_no_strip = getattr(parsed_no_strip, alt, None)
+                            if val != val_no_strip:
                                 has_correct_spacing = False
                         elif content.count(f"<{alt}>") > 0 or content.count(f"</{alt}>") > 0:
                             # Tag exists but content wasn't properly parsed

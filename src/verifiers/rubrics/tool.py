@@ -33,18 +33,15 @@ def make_tool_use_reward_func(
                 if msg["role"] == "assistant":
                     # Use parser to check for tool tag
                     parsed = assistant_parser.parse(msg["content"])
-                    if hasattr(parsed, tool_tag) and getattr(parsed, tool_tag) is not None:
+                    if getattr(parsed, tool_tag, None):
                         # Found a properly formatted tool message
                         if i + 1 < len(trajectory) and trajectory[i + 1]["role"] == "tool":
                             tool_attempts += 1
                             # Check response with env_parser
                             parsed_response = env_parser.parse(trajectory[i + 1]["content"])
-                            if (
-                                hasattr(parsed_response, result_tag)
-                                and getattr(parsed_response, result_tag) is not None
-                                and not getattr(parsed_response, result_tag).startswith("Error:")
-                            ):
-                                successful_executions += 1
+                            if result := getattr(parsed_response, result_tag, None):
+                                if not result.startswith("Error:"):
+                                    successful_executions += 1
 
             # Calculate reward
             if tool_attempts == 0:

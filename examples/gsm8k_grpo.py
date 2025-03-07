@@ -59,12 +59,12 @@ def create_environment(
         A tuple containing the initialized environment and a default suffix for run naming
     """
     if env_type.lower() == "code":
-        from verifiers.codex.docker import DockerPythonExecutor
-        # from verifiers.codex.e2b import E2BPythonExecutor
+        # from verifiers.codex.docker import DockerPythonExecutor
+        from verifiers.codex.e2b import E2BPythonExecutor
         # from verifiers.codex.local import LocalPythonExecutor
 
         log.info("Initializing CodeEnv environment")
-        code_executor = DockerPythonExecutor()
+        code_executor = E2BPythonExecutor()
 
         code_tag = "code"
         output_tag = "output"

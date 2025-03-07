@@ -3,7 +3,7 @@ import json
 import yaml
 from typing import Optional
 
-from e2b_code_interpreter import Sandbox
+from e2b_code_interpreter import Sandbox, Execution
 
 from verifiers.codex.models import CodeExecutor
 
@@ -35,7 +35,20 @@ class E2BPythonExecutor(CodeExecutor):
 
         with Sandbox(api_key=self.api_key) as sandbox:
             execution = sandbox.run_code(code, timeout=timeout)
-            return yaml.safe_dump(json.loads(execution.to_json())).strip()
+            return self._format_execution(execution)
+
+    def _format_execution(self, execution: Execution) -> str:
+        lines = []
+        if execution.logs.stdout:
+            lines.extend([f"stdout: {line}" for line in execution.logs.stdout])
+        if execution.logs.stderr:
+            lines.extend([f"stderr: {line}" for line in execution.logs.stderr])
+        if execution.error:
+            lines.append(f"Error: {str(execution.error)}")
+        else:
+            if execution.results:
+                lines.append(f"Result: {execution.text}")
+        return "\n".join(lines).strip()
 
     def destroy(self, **kwargs) -> None:
         """

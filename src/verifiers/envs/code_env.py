@@ -104,7 +104,7 @@ class CodeEnv(MultiStepEnv):
         try:
             parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid answer field (not just None from failed parsing)
-            return hasattr(parsed, "answer") and parsed.answer is not None
+            return getattr(parsed, "answer", None) is not None
         except Exception:
             return False
 
