@@ -11,7 +11,6 @@ from rerankers import Reranker
 from rerankers.models.ranker import BaseRanker
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "flashrank/ms-marco-MiniLM-L-12-v2"
@@ -46,6 +45,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    """Middleware to log all incoming requests and their responses."""
+    logger.info(f"Request: {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"Response: {request.method} {request.url.path} - Status: {response.status_code}")
+    return response
 
 # Load environment variables
 HOST = os.getenv("HOST", "0.0.0.0")

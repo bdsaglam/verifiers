@@ -24,5 +24,5 @@ EXPOSE 8000
 # Calculate number of workers based on CPU cores
 ENV WEB_CONCURRENCY=1
 
-# Command to run the application with Gunicorn
-CMD ["gunicorn", "main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-"] 
+# Command to run the application with Gunicorn using the config file
+CMD ["gunicorn", "main:app", "-c", "gunicorn.conf.py", "--log-config", "logging.conf"]

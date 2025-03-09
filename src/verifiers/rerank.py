@@ -25,10 +25,10 @@ class RerankClient:
 
         Args:
             base_url: The base URL for the reranker API.
-                      Defaults to RERANK_API_URL environment variable or "http://localhost:8000"
+                      Defaults to RERANK_API_URL environment variable or "http://localhost:8003"
             api_key: Optional API key for auth. Defaults to RERANK_API_KEY environment variable.
         """
-        self.base_url = base_url or os.getenv("RERANK_API_URL", "http://localhost:8000")
+        self.base_url = base_url or os.getenv("RERANK_API_URL", "http://localhost:8003")
         self.api_key = api_key or os.getenv("RERANK_API_KEY")
 
         # Strip trailing slash if present
