@@ -12,7 +12,10 @@ from trl import GRPOConfig
 import verifiers as vf
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
-from verifiers.rubrics.musique import musique_em_reward_func, musique_f1_reward_func
+from verifiers.rubrics.musique import (
+    musique_em_reward_func,
+    musique_f1_reward_func,
+)
 from verifiers.tools import make_retrieve_tool
 
 load_dotenv()
@@ -24,7 +27,9 @@ app = typer.Typer()
 accelerator = Accelerator()
 
 
-def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
+def prepare_dataset(
+    dataset_path: str, dataset_name: str, split: str
+) -> Dataset:
     ds = load_dataset(dataset_path, dataset_name, split=split)
 
     if "musique" in dataset_path:
@@ -42,6 +47,7 @@ def create_environment(
     eval_dataset: Dataset,
     tokenizer: Any,
     retriever: str,
+    n_jobs: int = 1,
 ):
     """
     Create and initialize the appropriate environment based on the specified type.
@@ -66,7 +72,7 @@ def create_environment(
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         max_steps=20,
-        n_jobs=32,
+        n_jobs=n_jobs,
     )
 
     return vf_env
@@ -89,17 +95,28 @@ def train(
     eval_dataset_split: str = typer.Option("validation[:32]"),
     max_prompt_length: int = typer.Option(4096, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
-    num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
+    num_generations: int = typer.Option(
+        8, "-g", help="Number of generations per prompt"
+    ),
     batch_size: int = typer.Option(32, "-bs", help="Per device batch size"),
     gradient_accumulation_steps: int = typer.Option(2, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
     eval_steps: int = typer.Option(100, "--eval-steps"),
-    report_to: str = typer.Option("wandb", "--report-to", help="Report to wandb"),
+    report_to: str = typer.Option(
+        "wandb", "--report-to", help="Report to wandb"
+    ),
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
-    suffix: str = typer.Option("grpo", "--suffix", help="Custom suffix for the run name"),
-    retriever: str = typer.Option("bm25", "--retriever", help="Retriever to use"),
+    suffix: str = typer.Option(
+        "grpo", "--suffix", help="Custom suffix for the run name"
+    ),
+    retriever: str = typer.Option(
+        "bm25", "--retriever", help="Retriever to use"
+    ),
+    n_env_jobs: int = typer.Option(
+        1, "--n-env-jobs", help="Number of environments to run in parallel"
+    ),
 ):
     """Train a model using GRPO for code generation or tool use."""
 
@@ -113,7 +130,9 @@ def train(
     train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
     log.info(f"Train dataset: {len(train_dataset)}")
 
-    eval_dataset = prepare_dataset(eval_dataset_path, eval_dataset_name, eval_dataset_split)
+    eval_dataset = prepare_dataset(
+        eval_dataset_path, eval_dataset_name, eval_dataset_split
+    )
     log.info(f"Eval dataset: {len(eval_dataset)}")
 
     # Load model and tokenizer
@@ -125,6 +144,7 @@ def train(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         retriever=retriever,
+        n_jobs=n_env_jobs,
     )
 
     # Use provided suffix or default based on env_type
@@ -169,7 +189,15 @@ def train(
     peft_config = LoraConfig(
         r=16,
         lora_alpha=64,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "up_proj", "down_proj", "gate_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "up_proj",
+            "down_proj",
+            "gate_proj",
+        ],
         task_type="CAUSAL_LM",
         lora_dropout=0.05,
     )
