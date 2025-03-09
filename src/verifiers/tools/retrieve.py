@@ -8,47 +8,6 @@ def golden_retriever(docs: list[dict], query: str) -> list[dict]:
     return [doc for doc in docs if doc["is_supporting"]]
 
 
-def make_bm25_retriever(stemmer_lang: str | None = "en", stopwords: list[str] = [], top_k: int = 3):
-    """Create a BM25 retriever function with the given configuration.
-
-    Args:
-        stemmer: Language code for stemmer (optional)
-        stopwords: List of stopwords to use (optional)
-    """
-    import bm25s
-    import Stemmer
-
-    # Initialize stemmer based on config
-    stemmer = None
-    if stemmer_lang:
-        stemmer = Stemmer.Stemmer(stemmer_lang)
-
-    def retrieve(docs: list[dict], query: str) -> list[dict]:
-        """BM25 retriever implementation.
-
-        Args:
-            docs: List of documents to search in. Each document should be a dict with 'id' and 'text' fields.
-            query: Query string to search for
-            top_k: Number of documents to retrieve (default: 3)
-
-        Returns:
-            List of documents sorted by relevance score
-        """
-        k = min(top_k, len(docs))
-        retriever = bm25s.BM25(corpus=docs)
-
-        tokenized_corpus = bm25s.tokenize(
-            [doc["text"] for doc in docs],
-            stopwords=stopwords,
-            stemmer=stemmer,
-        )
-        retriever.index(tokenized_corpus)
-        results, scores = retriever.retrieve(bm25s.tokenize(query, stemmer=stemmer), k=k)
-        return results[0].tolist()
-
-    return retrieve
-
-
 def make_rerank_retriever(
     model: str | None = None,
     top_k: int = 3,
@@ -70,7 +29,9 @@ def make_rerank_retriever(
     return retrieve
 
 
-def combine_retrieval_results(ranked_docs_list: list[list[dict]], docs: list[dict], top_k: int) -> list[dict]:
+def combine_retrieval_results(
+    ranked_docs_list: list[list[dict]], docs: list[dict], top_k: int
+) -> list[dict]:
     """Aggregate retrieval results from multiple retrievers.
 
     Args:
@@ -101,7 +62,9 @@ def combine_retrieval_results(ranked_docs_list: list[list[dict]], docs: list[dic
     return [docs_mapping[id] for id, _ in sorted_results[:top_k]]
 
 
-def make_combined_retriever(*retrievers: list[Callable], top_k: int = 3) -> Callable:
+def make_combined_retriever(
+    *retrievers: list[Callable], top_k: int = 3
+) -> Callable:
     """Create a combined retriever function with the given retrievers and configuration.
 
     Args:
@@ -127,29 +90,44 @@ def make_combined_retriever(*retrievers: list[Callable], top_k: int = 3) -> Call
 
     return retrieve
 
+class RetrieveToolError(Exception):
+    pass
 
-def make_retrieve_tool(name: str = "bm25", top_k: int = 3) -> Callable:
+def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
-    elif name == "bm25":
-        retriever = make_bm25_retriever(top_k=top_k)
-    elif name.startswith("rerank"):
+    elif name == "hybrid":
+        semantic_retriever = make_rerank_retriever(
+            model="flashrank/ms-marco-MiniLM-L-12-v2",
+            top_k=top_k * 2,
+        )
+        lexical_retriever = make_rerank_retriever(
+            model="bm25",
+            top_k=top_k * 2,
+        )
+        retriever = make_combined_retriever(
+            semantic_retriever,
+            lexical_retriever,
+            top_k=top_k,
+        )
+    elif name == "lexical":
+        retriever = make_rerank_retriever(top_k=top_k, model="bm25")
+    elif name.startswith("semantic"):
         kwargs = dict(top_k=top_k)
         parts = name.split("/", 1)
         if len(parts) == 2:
             kwargs["model"] = parts[1]
         retriever = make_rerank_retriever(**kwargs)
-    elif name == "hybrid":
-        rerank_retriever = make_rerank_retriever(top_k=top_k*2)
-        bm25_retriever = make_bm25_retriever(top_k=top_k*2)
-        retriever = make_combined_retriever(rerank_retriever, bm25_retriever, top_k=top_k)
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
     def retrieve(query: str, run_context: RunContext, **kwargs) -> str:
         """Search for relevant documents by the query. The results become better if the query is more specific."""
         docs = run_context["input"]["docs"]
-        retrieved_docs = retriever(docs, query)
+        try:
+            retrieved_docs = retriever(docs, query)
+        except Exception as e:
+            raise RetrieveToolError(f"Error retrieving documents: {e}")
         return "\n\n".join([x["text"] for x in retrieved_docs])
 
     return retrieve

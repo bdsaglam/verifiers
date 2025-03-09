@@ -68,7 +68,7 @@ def create_environment(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         few_shot=RETRIEVE_FEW_SHOT[0],
-        few_shot_prob=0.95,
+        few_shot_prob=1.0,
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         max_steps=20,
@@ -99,7 +99,7 @@ def train(
         8, "-g", help="Number of generations per prompt"
     ),
     batch_size: int = typer.Option(32, "-bs", help="Per device batch size"),
-    gradient_accumulation_steps: int = typer.Option(2, "-gacc"),
+    gradient_accumulation_steps: int = typer.Option(4, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
     eval_steps: int = typer.Option(100, "--eval-steps"),
@@ -112,10 +112,10 @@ def train(
         "grpo", "--suffix", help="Custom suffix for the run name"
     ),
     retriever: str = typer.Option(
-        "bm25", "--retriever", help="Retriever to use"
+        "lexical", "--retriever", help="Retriever to use"
     ),
     n_env_jobs: int = typer.Option(
-        1, "--n-env-jobs", help="Number of environments to run in parallel"
+        32, "--n-env-jobs", help="Number of environments to run in parallel"
     ),
 ):
     """Train a model using GRPO for code generation or tool use."""
@@ -203,6 +203,7 @@ def train(
     )
 
     # Initialize trainer
+    reward_weights = [2, 2] + [1] * len(vf_env.get_reward_funcs())
     reward_funcs = [
         musique_em_reward_func,
         musique_f1_reward_func,
@@ -213,6 +214,7 @@ def train(
         peft_config=peft_config,
         env=vf_env,
         reward_funcs=reward_funcs,
+        reward_weights=reward_weights,
         processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),

@@ -11,6 +11,7 @@ from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
+from verifiers.rubrics.reasoning import make_reasoning_reward_func
 from verifiers.rubrics.tool import make_tool_use_reward_func
 
 
@@ -87,6 +88,7 @@ class ToolEnv(MultiStepEnv):
         self.reward_funcs = [
             make_xml_reward_func(assistant_parser),
             make_format_reward_func(assistant_parser),
+            make_reasoning_reward_func(think_tag="think"),
             make_tool_use_reward_func(tool_tag="tool", result_tag="result"),
         ]
 
