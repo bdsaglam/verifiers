@@ -62,10 +62,11 @@ def create_environment(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         few_shot=RETRIEVE_FEW_SHOT[0],
-        few_shot_prob=0.7,
+        few_shot_prob=0.95,
         tools=[make_retrieve_tool(name=retriever, top_k=2)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         max_steps=20,
+        n_jobs=32,
     )
 
     return vf_env
@@ -94,6 +95,7 @@ def train(
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
     eval_steps: int = typer.Option(100, "--eval-steps"),
+    report_to: str = typer.Option("wandb", "--report-to", help="Report to wandb"),
     out: Path = typer.Option("./outputs/", "--out"),
     hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
     suffix: str = typer.Option("grpo", "--suffix", help="Custom suffix for the run name"),
@@ -154,7 +156,7 @@ def train(
         logging_steps=1,
         log_on_each_node=False,
         log_completions=True,
-        report_to="wandb",
+        report_to=report_to,
         run_name=run_name,
         reward_weights=None,
         eval_strategy="steps",
