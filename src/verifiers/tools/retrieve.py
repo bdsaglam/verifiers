@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable
+from typing import Any, Callable
 
 from verifiers.models import RunContext
 
@@ -58,7 +58,7 @@ def make_rerank_retriever(
 
     rerank_client = rerank_client or RerankClient()
 
-    kwargs = dict(top_n=top_k, return_documents=False)
+    kwargs: dict[str, Any] = dict(top_n=top_k, return_documents=False)
     if model is not None:
         kwargs["model"] = model
 
