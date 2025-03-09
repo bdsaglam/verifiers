@@ -203,7 +203,6 @@ def train(
     )
 
     # Initialize trainer
-    reward_weights = [2, 2] + [1] * len(vf_env.get_reward_funcs())
     reward_funcs = [
         musique_em_reward_func,
         musique_f1_reward_func,
@@ -214,7 +213,6 @@ def train(
         peft_config=peft_config,
         env=vf_env,
         reward_funcs=reward_funcs,
-        reward_weights=reward_weights,
         processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),
