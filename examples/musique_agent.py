@@ -117,6 +117,11 @@ def train(
     n_env_jobs: int = typer.Option(
         32, "--n-env-jobs", help="Number of environments to run in parallel"
     ),
+    resume_from_checkpoint: bool = typer.Option(
+        False,
+        "--resume-from-checkpoint",
+        help="Resume training from a checkpoint",
+    ),
 ):
     """Train a model using GRPO for code generation or tool use."""
 
@@ -220,7 +225,7 @@ def train(
     )
 
     # Start training
-    trainer.train()
+    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
 
     # Save artifacts if main process
     if accelerator.is_main_process:
