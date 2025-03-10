@@ -28,6 +28,8 @@ logs/
 *.swp
 .DS_Store
 
+# Jupyter
+.ipynb_checkpoints
 
 # WIPs
 wip/
