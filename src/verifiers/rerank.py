@@ -69,7 +69,7 @@ class RerankClient:
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
-        with httpx.Client() as client:
+        with httpx.Client(timeout=httpx.Timeout(timeout=30.0)) as client:
             response = client.post(url, json=payload, headers=headers)
 
         if response.status_code != 200:
