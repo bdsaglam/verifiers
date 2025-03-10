@@ -240,4 +240,4 @@ async def list_models():
 
 if __name__ == "__main__":
     logger.info(f"Starting server on {HOST}:{PORT}")
-    uvicorn.run("app:app", host=HOST, port=PORT, reload=False)
+    uvicorn.run("main:app", host=HOST, port=PORT, reload=False)
