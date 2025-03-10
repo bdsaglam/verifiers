@@ -27,6 +27,19 @@ huggingface-cli upload --repo-type model \
     ./outputs/Qwen2.5-1.5B-Instruct-gsm8k-calc
 ```
 
+
+### Resume training
+
+```sh
+accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/musique_agent.py \
+    --model 'outputs/tool-Qwen2.5-1.5B-Instruct-musique-grpo-merged' \
+    --dataset-split 'train[2500:]' \
+    --n-env-jobs 32 \
+    --retriever hybrid \
+    2>&1 | tee tmp/ragent-qwen-musique-grpo-resume.log
+
+```
+
 ## Predict
 
 ```sh
