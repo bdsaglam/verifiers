@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -84,9 +85,18 @@ def save_artifacts(model, tokenizer, model_id: str, hub_dir: Path):
     tokenizer.save_pretrained(hub_dir / model_id)
 
 
+def get_model_name(model_path: str) -> str:
+    if Path(model_path).exists():
+        with open(Path(model_path) / "config.json", "r") as f:
+            config = json.load(f)
+        return config["_name_or_path"]
+    else:
+        return model_path.split("/")[-1]
+
+
 @app.command("train")
 def train(
-    model_name: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
+    model_path: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
     dataset_path: str = typer.Option("bdsaglam/musique"),
     dataset_name: str = typer.Option("answerable"),
     dataset_split: str = typer.Option("train"),
@@ -141,7 +151,7 @@ def train(
     log.info(f"Eval dataset: {len(eval_dataset)}")
 
     # Load model and tokenizer
-    model, tokenizer = vf.get_model_and_tokenizer(model_name)
+    model, tokenizer = vf.get_model_and_tokenizer(model_path)
 
     # Initialize environment based on env_type
     vf_env = create_environment(
@@ -153,7 +163,7 @@ def train(
     )
 
     # Use provided suffix or default based on env_type
-    run_name = f"tool-{model_name.split('/')[-1]}-{dataset_path.split('/')[-1]}-{suffix}"
+    run_name = f"ragent-{get_model_name(model_path)}-{dataset_path.split('/')[-1]}-{suffix}"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
@@ -177,7 +187,7 @@ def train(
         vllm_gpu_memory_utilization=0.7,
         save_strategy="steps",
         save_steps=100,
-        save_only_model=True,
+        save_only_model=False,
         logging_steps=1,
         log_on_each_node=False,
         log_completions=True,
