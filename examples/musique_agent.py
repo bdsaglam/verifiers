@@ -112,6 +112,9 @@ def train(
     gradient_accumulation_steps: int = typer.Option(4, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
+    peft: bool = typer.Option(True, "--peft", help="Use PEFT"),
+    lora_r: int = typer.Option(32, "--lora-r", help="LORA rank"),
+    lora_alpha: int = typer.Option(64, "--lora-alpha", help="LORA alpha"),
     eval_steps: int = typer.Option(100, "--eval-steps"),
     report_to: str = typer.Option(
         "wandb", "--report-to", help="Report to wandb"
@@ -201,21 +204,24 @@ def train(
         eval_accumulation_steps=1,
     )
     # Configure LoRA
-    peft_config = LoraConfig(
-        r=16,
-        lora_alpha=64,
-        target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
-            "up_proj",
-            "down_proj",
-            "gate_proj",
-        ],
-        task_type="CAUSAL_LM",
-        lora_dropout=0.05,
-    )
+    if peft:
+        peft_config = LoraConfig(
+            r=lora_r,
+            lora_alpha=lora_alpha,
+            target_modules=[
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "up_proj",
+                "down_proj",
+                "gate_proj",
+            ],
+            task_type="CAUSAL_LM",
+            lora_dropout=0.05,
+        )
+    else:
+        peft_config = None
 
     # Initialize trainer
     reward_funcs = [
