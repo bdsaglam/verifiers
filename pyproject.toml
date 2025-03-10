@@ -26,6 +26,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "jupyter>=1.1.1",
+    "matplotlib",
+    "pandas",
+    "tabulate",
 ]
 retrieve = [
     "bm25s[full]",
