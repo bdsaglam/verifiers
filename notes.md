@@ -47,5 +47,5 @@ python examples/ragent.py predict \
     --dataset-path bdsaglam/musique-mini \
     --dataset-name answerable \
     --dataset-split validation \
-    --report-to none
+    --out outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged.jsonl
 ```
