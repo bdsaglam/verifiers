@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -9,17 +10,20 @@ from accelerate import Accelerator
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
 from peft import LoraConfig
+from tqdm import tqdm
 from trl import GRPOConfig
 
 import verifiers as vf
 import wandb
 from verifiers.envs.tool_env import ToolEnv
+from verifiers.imports import LLM, SamplingParams
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
 from verifiers.rubrics.musique import (
     musique_em_reward_func,
     musique_f1_reward_func,
 )
 from verifiers.tools import make_retrieve_tool
+from verifiers.utils.model_utils import get_tokenizer
 
 load_dotenv()
 
@@ -44,11 +48,13 @@ def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset
 
 
 def create_environment(
-    train_dataset: Dataset,
-    eval_dataset: Dataset,
     tokenizer: Any,
     retriever: str,
+    train_dataset: Dataset,
+    eval_dataset: Dataset | None = None,
     n_jobs: int = 1,
+    top_k: int = 2,
+    few_shot_prob: float = 1.0,
 ):
     """
     Create and initialize the appropriate environment based on the specified type.
@@ -68,10 +74,10 @@ def create_environment(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        few_shot=RETRIEVE_FEW_SHOT[0],
-        few_shot_prob=1.0,
-        tools=[make_retrieve_tool(name=retriever, top_k=2)],
+        tools=[make_retrieve_tool(name=retriever, top_k=top_k)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
+        few_shot=RETRIEVE_FEW_SHOT[0],
+        few_shot_prob=few_shot_prob,
         max_steps=20,
         n_jobs=n_jobs,
     )
@@ -100,10 +106,12 @@ def train(
     dataset_path: str = typer.Option("bdsaglam/musique"),
     dataset_name: str = typer.Option("answerable"),
     dataset_split: str = typer.Option("train"),
-    eval_dataset_path: str = typer.Option("bdsaglam/musique-mini"),
+    eval_dataset_path: str = typer.Option("bdsaglam/musique"),
     eval_dataset_name: str = typer.Option("answerable"),
-    eval_dataset_split: str = typer.Option("validation"),
+    eval_dataset_split: str = typer.Option("validation[:32]"),
     retriever: str = typer.Option("lexical", "--retriever", help="Retriever to use"),
+    retriever_top_k: int = typer.Option(2, "--retriever-top-k", help="Number of retriever results to use"),
+    few_shot_prob: float = typer.Option(1.0, "--few-shot-prob", help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(32, "--n-env-jobs", help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
@@ -114,7 +122,9 @@ def train(
     peft: bool = typer.Option(True, help="Use PEFT"),
     lora_r: int = typer.Option(32, help="LORA rank"),
     lora_alpha: int = typer.Option(64, help="LORA alpha"),
-    eval_steps: int = typer.Option(100),
+    eval_strategy: str = typer.Option("no", help="Evaluation strategy"),
+    eval_on_start: bool = typer.Option(False, help="Evaluate on start"),
+    eval_steps: int = typer.Option(100, help="Evaluation steps"),
     report_to: str = typer.Option("wandb", help="Report to wandb"),
     push_to_hub: bool = typer.Option(True, help="Push to hub"),
     out: Path = typer.Option("./outputs/"),
@@ -137,11 +147,13 @@ def train(
 
     # Initialize environment based on env_type
     vf_env = create_environment(
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         retriever=retriever,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         n_jobs=n_env_jobs,
+        top_k=retriever_top_k,
+        few_shot_prob=few_shot_prob,
     )
 
     # Use provided suffix or default based on env_type
@@ -162,6 +174,7 @@ def train(
         num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         num_generations=num_generations,
         beta=0.04,
+        reward_weights=None,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
         per_device_train_batch_size=batch_size,
@@ -177,9 +190,8 @@ def train(
         log_completions=True,
         report_to=report_to,
         run_name=run_name,
-        reward_weights=None,
-        eval_strategy="steps",
-        eval_on_start=True,
+        eval_strategy=eval_strategy,
+        eval_on_start=eval_on_start,
         eval_steps=eval_steps,
         per_device_eval_batch_size=batch_size,
         eval_accumulation_steps=1,
@@ -229,6 +241,98 @@ def train(
     del model
     del trainer
     torch.cuda.empty_cache()
+
+
+@app.command("predict")
+def predict(
+    model_path: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
+    dataset_path: str = typer.Option("bdsaglam/musique-mini"),
+    dataset_name: str = typer.Option("answerable"),
+    dataset_split: str = typer.Option("validation"),
+    retriever: str = typer.Option("lexical", "--retriever", help="Retriever to use"),
+    retriever_top_k: int = typer.Option(2, "--retriever-top-k", help="Number of retriever results to use"),
+    few_shot_prob: float = typer.Option(1.0, "--few-shot-prob", help="Probability of using few-shot examples"),
+    n_env_jobs: int = typer.Option(32, "--n-env-jobs", help="Number of environments to run in parallel"),
+    max_completion_length: int = typer.Option(1024, "-cl"),
+    batch_size: int = typer.Option(32, "-bs"),
+    temperature: float = typer.Option(0.3, "-t"),
+    top_p: float = typer.Option(0.95, "-p"),
+    out: Path = typer.Option("./outputs/", "--out"),
+    seed: int = 89,
+):
+    """Predict with a model on a dataset using RAG-based verification."""
+
+    # Load dataset
+    dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
+    log.info(f"Dataset: {len(dataset)}")
+
+    # Load model and tokenizer
+    tokenizer = get_tokenizer(model_path)
+
+    # Initialize environment
+    vf_env = create_environment(
+        tokenizer=tokenizer,
+        retriever=retriever,
+        train_dataset=dataset,
+        n_jobs=n_env_jobs,
+        top_k=retriever_top_k,
+        few_shot_prob=few_shot_prob,
+    )
+
+    # Initialize vLLM for serving
+    llm = LLM(
+        model=model_path,
+        trust_remote_code=True,
+        dtype="bfloat16",
+        gpu_memory_utilization=0.8,
+        seed=seed,
+    )
+
+    # Set up sampling parameters
+    sampling_params = SamplingParams(
+        max_tokens=max_completion_length,
+        stop=[
+            *vf_env.special_stop_tokens,
+            tokenizer.eos_token,
+            tokenizer.pad_token,
+        ],
+        temperature=temperature,
+        top_p=top_p,
+    )
+
+    # Process dataset in batches with progress bar
+    ds = vf_env.get_dataset()
+    records = []
+    for i in tqdm(range(0, len(ds), batch_size), desc="Processing batches", total=len(ds) // batch_size):
+        inputs = ds.select(range(i, min(i + batch_size, len(ds))))
+
+        # Generate completions and interact with environment
+        result = vf_env.generate(
+            inputs=inputs,
+            llm=llm,
+            sampling_params=sampling_params,
+        )
+
+        # Store trajectories
+        for input_data, messages in zip(inputs, result["messages"]):
+            record = {
+                **input_data,
+                "trajectory": input_data["prompt"] + messages,
+            }
+            records.append(record)
+
+    # Save trajectories to jsonl file
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
+    output_file = out / f"predictions-{dataset_id}-{model_path.split('/')[-1]}-{timestamp}.jsonl"
+    with open(output_file, "w") as f:
+        for record in records:
+            f.write(json.dumps(record) + "\n")
+
+    log.info(f"Saved predictions to {output_file}")
 
 
 if __name__ == "__main__":

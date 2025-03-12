@@ -13,7 +13,7 @@ export LD_LIBRARY_PATH=/home/baris/miniconda3/envs/verifiers/lib/python3.11/site
 
 ```sh
 export CUDA_VISIBLE_DEVICES=0,1,2
-accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent_train.py  2>&1 | tee tmp/ragent-qwen-musique-grpo.log
+accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent.py train 2>&1 | tee tmp/ragent-qwen-musique-grpo.log
 ```
 
 ### Publish manually
@@ -27,7 +27,7 @@ huggingface-cli upload --repo-type model \
 ### Resume training
 
 ```sh
-accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent_train.py \
+accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent.py train \
     --model 'outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo' \
     2>&1 | tee tmp/ragent-qwen-musique-grpo-resume.log
 
@@ -42,7 +42,7 @@ python scripts/merge.py \
 ```
 
 ```sh
-python examples/ragent_predict.py \
+python examples/ragent.py predict \
     --model outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged \
     --dataset-path bdsaglam/musique-mini \
     --dataset-name answerable \
