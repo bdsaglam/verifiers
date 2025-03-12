@@ -34,3 +34,25 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s 
+  
+  # localai-api:
+  #   image: localai/localai:latest-aio-gpu-nvidia-cuda-12
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+  #     interval: 1m
+  #     timeout: 20m
+  #     retries: 5
+  #   ports:
+  #     - 8083:8080
+  #   environment:
+  #     - DEBUG=true
+  #     # ...
+  #   volumes:
+  #     - ~/.cache/localai:/build/models:cached
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
