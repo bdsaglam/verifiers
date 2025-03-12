@@ -32,7 +32,9 @@ dev = [
 ]
 retrieve = [
     "bm25s[full]",
-    "pystemmer",
+    "PyStemmer",
+    "huggingface_hub",
+    "jax[cpu]",
     "httpx",
 ]
 search = [

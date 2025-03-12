@@ -8,6 +8,53 @@ def golden_retriever(docs: list[dict], query: str) -> list[dict]:
     return [doc for doc in docs if doc["is_supporting"]]
 
 
+def make_bm25_retriever(
+    stemmer_lang: str | None = "en",
+    stopwords: list[str] = [],
+    top_k: int = 3,
+):
+    """Create a BM25 retriever function with the given configuration.
+
+    Args:
+        stemmer: Language code for stemmer (optional)
+        stopwords: List of stopwords to use (optional)
+    """
+    import bm25s
+    import Stemmer
+
+    # Initialize stemmer based on config
+    stemmer = None
+    if stemmer_lang:
+        stemmer = Stemmer.Stemmer(stemmer_lang)
+
+    def retrieve(docs: list[dict], query: str) -> list[dict]:
+        """BM25 retriever implementation.
+
+        Args:
+            docs: List of documents to search in. Each document should be a dict with 'id' and 'text' fields.
+            query: Query string to search for
+            top_k: Number of documents to retrieve (default: 3)
+
+        Returns:
+            List of documents sorted by relevance score
+        """
+        k = min(top_k, len(docs))
+        retriever = bm25s.BM25(corpus=docs)
+
+        tokenized_corpus = bm25s.tokenize(
+            [doc["text"] for doc in docs],
+            stopwords=stopwords,
+            stemmer=stemmer,
+        )
+        retriever.index(tokenized_corpus)
+        results, scores = retriever.retrieve(
+            bm25s.tokenize(query, stemmer=stemmer), k=k
+        )
+        return results[0].tolist()
+
+    return retrieve
+
+
 def make_rerank_retriever(
     model: str | None = None,
     top_k: int = 3,
@@ -30,7 +77,9 @@ def make_rerank_retriever(
 
 
 def combine_retrieval_results(
-    ranked_docs_list: list[list[dict]], docs: list[dict], top_k: int
+    ranked_docs_list: list[list[dict]],
+    docs: list[dict],
+    top_k: int,
 ) -> list[dict]:
     """Aggregate retrieval results from multiple retrievers.
 
@@ -63,7 +112,8 @@ def combine_retrieval_results(
 
 
 def make_combined_retriever(
-    *retrievers: list[Callable], top_k: int = 3
+    *retrievers: list[Callable],
+    top_k: int = 3,
 ) -> Callable:
     """Create a combined retriever function with the given retrievers and configuration.
 
@@ -90,12 +140,16 @@ def make_combined_retriever(
 
     return retrieve
 
+
 class RetrieveToolError(Exception):
     pass
+
 
 def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
+    elif name == "bm25":
+        retriever = make_bm25_retriever(top_k=top_k)
     elif name == "hybrid":
         semantic_retriever = make_rerank_retriever(
             model="flashrank/ms-marco-MiniLM-L-12-v2",
