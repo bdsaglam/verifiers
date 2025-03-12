@@ -33,9 +33,8 @@ huggingface-cli upload --repo-type model \
 ```sh
 accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/musique_agent.py \
     --model 'outputs/tool-Qwen2.5-1.5B-Instruct-musique-grpo-merged' \
-    --dataset-split 'train[2500:]' \
     --n-env-jobs 32 \
-    --retriever hybrid \
+    --retriever lexical \
     2>&1 | tee tmp/ragent-qwen-musique-grpo-resume.log
 
 ```
