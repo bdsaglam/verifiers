@@ -1,0 +1,9 @@
+type: volume
+name: dstack-cache
+
+# Volumes are bound to a specific backend and region
+backend: aws
+region: eu-central-1
+
+# Required size
+size: 500GB

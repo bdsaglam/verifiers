@@ -1,0 +1,17 @@
+type: dev-environment
+name: vscode
+
+# If `image` is not specified, dstack uses its default image
+python: "3.11"
+#image: dstackai/base:py3.13-0.7-cuda-12.1
+
+ide: vscode
+
+resources:
+  # memory: 200GB..
+  # # 4 GPUs from 40GB to 80GB
+  # gpu: 40GB..80GB:4
+  # # Shared memory (required by multi-gpu)
+  # shm_size: 16GB
+  # Disk size
+  disk: 500GB
