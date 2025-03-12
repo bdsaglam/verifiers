@@ -257,7 +257,7 @@ def predict(
     batch_size: int = typer.Option(32, "-bs"),
     temperature: float = typer.Option(0.3, "-t"),
     top_p: float = typer.Option(0.95, "-p"),
-    out: Path = typer.Option("./outputs/", "--out"),
+    out: Path | None = typer.Option(None, "--out"),
     seed: int = 89,
 ):
     """Predict with a model on a dataset using RAG-based verification."""
@@ -322,17 +322,19 @@ def predict(
             records.append(record)
 
     # Save trajectories to jsonl file
-    out = Path(out)
-    out.mkdir(parents=True, exist_ok=True)
+    if out is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
+        out = Path("./outputs") / f"predictions-{dataset_id}-{model_path.split('/')[-1]}-{timestamp}.jsonl"
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
-    output_file = out / f"predictions-{dataset_id}-{model_path.split('/')[-1]}-{timestamp}.jsonl"
-    with open(output_file, "w") as f:
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(out, "w") as f:
         for record in records:
             f.write(json.dumps(record) + "\n")
 
-    log.info(f"Saved predictions to {output_file}")
+    log.info(f"Saved predictions to {out}")
 
 
 if __name__ == "__main__":
