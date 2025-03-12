@@ -6,6 +6,7 @@ from typing import Any
 
 import torch
 import typer
+import wandb
 from accelerate import Accelerator
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
@@ -14,8 +15,6 @@ from tqdm import tqdm
 from trl import GRPOConfig
 
 import verifiers as vf
-from verifiers.utils.cuda import get_half_precision_dtype
-import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
@@ -24,6 +23,7 @@ from verifiers.rubrics.musique import (
     musique_f1_reward_func,
 )
 from verifiers.tools import make_retrieve_tool
+from verifiers.utils.cuda import get_half_precision_dtype
 from verifiers.utils.model_utils import get_tokenizer
 
 load_dotenv()
