@@ -12,29 +12,23 @@ export LD_LIBRARY_PATH=/home/baris/miniconda3/envs/verifiers/lib/python3.11/site
 ## Train
 
 ```sh
-export CUDA_VISIBLE_DEVICES=0,1
-accelerate launch --config-file configs/zero3.yaml --num-processes 1 examples/gsm8k_calculator.py
+export CUDA_VISIBLE_DEVICES=0,1,2
+accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent_train.py  2>&1 | tee tmp/ragent-qwen-musique-grpo.log
 ```
 
-```sh
-export CUDA_VISIBLE_DEVICES=0,1
-accelerate launch --config-file configs/zero3.yaml --num-processes 1 scripts/gsm8k_calculator.py train
-```
-
+### Publish manually
 ```sh
 huggingface-cli upload --repo-type model \
-    Qwen2.5-1.5B-Instruct-gsm8k-calc \
-    ./outputs/Qwen2.5-1.5B-Instruct-gsm8k-calc
+    ragent-Qwen2.5-1.5B-Instruct-musique-grpo \
+    ./outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo
 ```
 
 
 ### Resume training
 
 ```sh
-accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/musique_agent.py \
-    --model 'outputs/tool-Qwen2.5-1.5B-Instruct-musique-grpo-merged' \
-    --n-env-jobs 32 \
-    --retriever lexical \
+accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent_train.py \
+    --model 'outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo' \
     2>&1 | tee tmp/ragent-qwen-musique-grpo-resume.log
 
 ```
@@ -43,16 +37,15 @@ accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/mu
 
 ```sh
 python scripts/merge.py \
-    outputs/tool-Qwen2.5-1.5B-Instruct-gsm8k-grpo/checkpoint-900 \
-    --out outputs/bdsaglam/Qwen2.5-1.5B-Instruct-GRPO-gsm8k-calc
+    outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo/checkpoint-1000 \
+    --out outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged
 ```
 
 ```sh
-python examples/predict.py \
-    --model outputs/bdsaglam/Qwen2.5-1.5B-Instruct-GRPO-gsm8k-calc \
-    --env tool \
-    --dataset-path openai/gsm8k \
-    --dataset-name main \
-    --dataset-split 'test[:32]' \
+python examples/magent_predict.py \
+    --model outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged \
+    --dataset-path bdsaglam/musique-mini \
+    --dataset-name answerable \
+    --dataset-split validation \
     --report-to none
 ```

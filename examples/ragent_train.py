@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import torch
 import typer
 from accelerate import Accelerator
 from datasets import Dataset, load_dataset
@@ -11,6 +12,7 @@ from peft import LoraConfig
 from trl import GRPOConfig
 
 import verifiers as vf
+import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
 from verifiers.rubrics.musique import (
@@ -28,9 +30,7 @@ app = typer.Typer()
 accelerator = Accelerator()
 
 
-def prepare_dataset(
-    dataset_path: str, dataset_name: str, split: str
-) -> Dataset:
+def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
     ds = load_dataset(dataset_path, dataset_name, split=split)
 
     if "musique" in dataset_path:
@@ -100,57 +100,36 @@ def train(
     dataset_path: str = typer.Option("bdsaglam/musique"),
     dataset_name: str = typer.Option("answerable"),
     dataset_split: str = typer.Option("train"),
-    eval_dataset_path: str = typer.Option("bdsaglam/musique"),
+    eval_dataset_path: str = typer.Option("bdsaglam/musique-mini"),
     eval_dataset_name: str = typer.Option("answerable"),
-    eval_dataset_split: str = typer.Option("validation[:32]"),
+    eval_dataset_split: str = typer.Option("validation"),
+    retriever: str = typer.Option("lexical", "--retriever", help="Retriever to use"),
+    n_env_jobs: int = typer.Option(32, "--n-env-jobs", help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
-    num_generations: int = typer.Option(
-        8, "-g", help="Number of generations per prompt"
-    ),
+    num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
     batch_size: int = typer.Option(32, "-bs", help="Per device batch size"),
     gradient_accumulation_steps: int = typer.Option(4, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
-    beta: float = typer.Option(0.04, "--beta", help="KL penalty coefficient"),
-    peft: bool = typer.Option(True, "--peft", help="Use PEFT"),
-    lora_r: int = typer.Option(32, "--lora-r", help="LORA rank"),
-    lora_alpha: int = typer.Option(64, "--lora-alpha", help="LORA alpha"),
-    eval_steps: int = typer.Option(100, "--eval-steps"),
-    report_to: str = typer.Option(
-        "wandb", "--report-to", help="Report to wandb"
-    ),
-    out: Path = typer.Option("./outputs/", "--out"),
-    hub_dir: Path = typer.Option("/home/baris/.cache/huggingface/tgi/local"),
-    suffix: str = typer.Option(
-        "grpo", "--suffix", help="Custom suffix for the run name"
-    ),
-    retriever: str = typer.Option(
-        "lexical", "--retriever", help="Retriever to use"
-    ),
-    n_env_jobs: int = typer.Option(
-        32, "--n-env-jobs", help="Number of environments to run in parallel"
-    ),
-    resume_from_checkpoint: bool = typer.Option(
-        False,
-        "--resume-from-checkpoint",
-        help="Resume training from a checkpoint",
-    ),
+    peft: bool = typer.Option(True, help="Use PEFT"),
+    lora_r: int = typer.Option(32, help="LORA rank"),
+    lora_alpha: int = typer.Option(64, help="LORA alpha"),
+    eval_steps: int = typer.Option(100),
+    report_to: str = typer.Option("wandb", help="Report to wandb"),
+    push_to_hub: bool = typer.Option(True, help="Push to hub"),
+    out: Path = typer.Option("./outputs/"),
+    resume_from_checkpoint: bool = typer.Option(False, help="Resume training from a checkpoint"),
 ):
     """Train a model using GRPO for code generation or tool use."""
 
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
 
-    hub_dir = Path(hub_dir)
-    hub_dir.mkdir(parents=True, exist_ok=True)
-
     # Load dataset
     train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
     log.info(f"Train dataset: {len(train_dataset)}")
 
-    eval_dataset = prepare_dataset(
-        eval_dataset_path, eval_dataset_name, eval_dataset_split
-    )
+    eval_dataset = prepare_dataset(eval_dataset_path, eval_dataset_name, eval_dataset_split)
     log.info(f"Eval dataset: {len(eval_dataset)}")
 
     # Load model and tokenizer
@@ -166,24 +145,26 @@ def train(
     )
 
     # Use provided suffix or default based on env_type
-    run_name = f"ragent-{get_model_name(model_path)}-{dataset_path.split('/')[-1]}-{suffix}"
+    run_name = f"ragent-{get_model_name(model_path)}-{dataset_path.split('/')[-1]}-grpo"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
+        push_to_hub=push_to_hub,
+        hub_model_id=run_name,
+        bf16=True,
+        num_train_epochs=1,
         learning_rate=learning_rate,
         lr_scheduler_type="constant_with_warmup",
         warmup_steps=10,
-        num_train_epochs=1,
-        bf16=True,
         adam_beta1=0.9,
         adam_beta2=0.99,
         max_grad_norm=0.01,
         num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
-        beta=beta,
+        num_generations=num_generations,
+        beta=0.04,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
         per_device_train_batch_size=batch_size,
-        num_generations=num_generations,
         gradient_accumulation_steps=gradient_accumulation_steps,
         gradient_checkpointing=True,
         use_vllm=True,
@@ -208,6 +189,7 @@ def train(
         peft_config = LoraConfig(
             r=lora_r,
             lora_alpha=lora_alpha,
+            lora_dropout=0.05,
             target_modules=[
                 "q_proj",
                 "k_proj",
@@ -218,7 +200,6 @@ def train(
                 "gate_proj",
             ],
             task_type="CAUSAL_LM",
-            lora_dropout=0.05,
         )
     else:
         peft_config = None
@@ -243,9 +224,11 @@ def train(
     # Start training
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
 
-    # Save artifacts if main process
-    if accelerator.is_main_process:
-        save_artifacts(model, tokenizer, run_name, hub_dir)
+    # Cleanup
+    wandb.finish()
+    del model
+    del trainer
+    torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
