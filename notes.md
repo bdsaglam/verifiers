@@ -42,7 +42,7 @@ python scripts/merge.py \
 ```
 
 ```sh
-python examples/magent_predict.py \
+python examples/ragent_predict.py \
     --model outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged \
     --dataset-path bdsaglam/musique-mini \
     --dataset-name answerable \
