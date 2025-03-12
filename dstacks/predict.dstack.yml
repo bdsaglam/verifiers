@@ -9,22 +9,23 @@ nvcc: true
 
 
 env:
-  - HF_TOKEN=
+  - HF_TOKEN
+  - LD_LIBRARY_PATH=/opt/conda/envs/workflow/lib/python3.11/site-packages/nvidia/nvjitlink/lib:/usr/local/cuda-12.3/lib64
 
 commands:
-  - pip install -e '.[retrieve]'
-  - python examples/ragent.py predict \
-    --model bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique \
-    --dataset-path bdsaglam/musique-mini \
-    --dataset-name answerable \
-    --dataset-split validation \
-    --retriever bm25 \
-    --n-env-jobs 1 \
+  - pip install -e .[retrieve]
+  - pip install bm25s PyStemmer huggingface_hub
+  - >
+    python examples/ragent.py predict
+    --model bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique
+    --retriever bm25
+    --n-env-jobs 1
     --batch-size 32
     --out outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo.jsonl
-  - huggingface-cli upload \
-    --repo-type dataset \
-    bdsaglam/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo \
+  - >
+    huggingface-cli upload
+    --repo-type dataset
+    bdsaglam/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo
     outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo.jsonl
   
 resources:
@@ -32,3 +33,6 @@ resources:
   gpu:
     memory: 16GB..32GB
     count: 1
+
+volumes:
+ - /root/.cache:/root/.cache
