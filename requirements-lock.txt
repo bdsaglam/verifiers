@@ -18,7 +18,9 @@ beautifulsoup4==4.13.3
 black==25.1.0
 blake3==1.0.4
 bleach==6.2.0
+blinker==1.9.0
 bm25s==0.2.7.post1
+Brotli==1.1.0
 cachetools==5.5.2
 certifi==2025.1.31
 cffi==1.17.1
@@ -28,7 +30,10 @@ cloudpickle==3.1.1
 colorful==0.5.6
 comm==0.2.2
 compressed-tensors==0.9.0
+ConfigArgParse==1.7
+contourpy==1.3.1
 cupy-cuda12x==13.4.0
+cycler==0.12.1
 datasets==3.3.2
 debugpy==1.8.12
 decorator==5.2.1
@@ -53,15 +58,22 @@ fastapi-cli==0.0.7
 fastjsonschema==2.21.1
 fastrlock==0.8.3
 filelock==3.17.0
+Flask==3.1.0
+flask-cors==5.0.1
+Flask-Login==0.6.3
+fonttools==4.56.0
 fqdn==1.5.1
 frozenlist==1.5.0
 fsspec==2024.12.0
+gevent==24.11.1
+geventhttpclient==2.3.3
 gguf==0.10.0
 gitdb==4.0.12
 GitPython==3.1.44
 google-api-core==2.24.1
 google-auth==2.38.0
 googleapis-common-protos==1.69.0
+greenlet==3.1.1
 grpcio==1.70.0
 h11==0.14.0
 hjson==3.1.0
@@ -78,11 +90,13 @@ ipython==9.0.1
 ipython_pygments_lexers==1.1.1
 ipywidgets==8.1.5
 isoduration==20.11.0
+itsdangerous==2.2.0
 jax==0.5.2
 jaxlib==0.5.1
 jedi==0.19.2
 Jinja2==3.1.5
 jiter==0.8.2
+joblib==1.4.2
 json5==0.10.0
 jsonpointer==3.0.0
 jsonschema==4.23.0
@@ -99,14 +113,17 @@ jupyterlab==4.3.5
 jupyterlab_pygments==0.3.0
 jupyterlab_server==2.27.3
 jupyterlab_widgets==3.0.13
+kiwisolver==1.4.8
 lark==1.2.2
 liger_kernel==0.5.4
 linkify-it-py==2.0.3
 llvmlite==0.43.0
 lm-format-enforcer==0.10.11
+locust==2.33.1
 lxml==5.3.1
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
+matplotlib==3.10.1
 matplotlib-inline==0.1.7
 mdit-py-plugins==0.4.2
 mdurl==0.1.2
@@ -184,6 +201,7 @@ pycparser==2.22
 pydantic==2.10.6
 pydantic_core==2.27.2
 Pygments==2.19.1
+pyparsing==3.2.1
 PyStemmer==2.2.0.3
 pytest==8.3.5
 python-dateutil==2.9.0.post0
@@ -220,6 +238,7 @@ soupsieve==2.6
 stack-data==0.6.3
 starlette==0.46.0
 sympy==1.13.1
+tabulate==0.9.0
 terminado==0.18.1
 textual==2.1.2
 tiktoken==0.9.0
@@ -243,7 +262,7 @@ uri-template==1.3.0
 urllib3==2.3.0
 uvicorn==0.34.0
 uvloop==0.21.0
--e git+ssh://git@github.com/bdsaglam/verifiers.git@923c00a29d4199f634a0841d482495f0cddf01dc#egg=verifiers
+-e git+ssh://git@github.com/bdsaglam/verifiers.git@95a1b966efee54a01ef768b5fd59749f6c0e299d#egg=verifiers
 virtualenv==20.29.2
 vllm==0.7.0
 wandb==0.19.7
@@ -253,6 +272,7 @@ webcolors==24.11.1
 webencodings==0.5.1
 websocket-client==1.8.0
 websockets==15.0
+Werkzeug==3.1.3
 widgetsnbextension==4.0.13
 wrapt==1.17.2
 xformers==0.0.28.post3
@@ -260,3 +280,5 @@ xgrammar==0.1.11
 xxhash==3.5.0
 yarl==1.18.3
 zipp==3.21.0
+zope.event==5.0
+zope.interface==7.2
