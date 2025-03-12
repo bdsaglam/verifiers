@@ -10,32 +10,35 @@ nvcc: true
 
 
 env:
-  - HF_TOKEN=
-  - WANDB_API_KEY=
+  - HF_TOKEN
+  - WANDB_API_KEY
   - WANDB_PROJECT="agent-rl"
   - ACCELERATE_LOG_LEVEL=info
 
 commands:
   - pip install -e '.[retrieve]'
-  - accelerate launch 
+  - pip install bm25s PyStemmer huggingface_hub
+
+  - >
+   accelerate launch 
     --config-file configs/zero3.yaml 
-    --num-processes 2 
-    examples/musique_agent.py
-    --model 'meta-llama/Llama-3.1-8B-Instruct'
-    --n-env-jobs 32
+    --num-processes 2
+    examples/ragent.py train 
+    --model 'bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique'
+    --n-env-jobs 1
     --retriever bm25
-    2>&1 | tee train.log
-  - huggingface-cli upload 
-    --repo-type model 
-    bdsaglam/Llama-3.1-8B-Instruct-ragent-lora
-    ./outputs/ragent-Llama-3.1-8B-Instruct-musique-grpo
+  
+  - huggingface-cli upload --repo-type model bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique-extended ./outputs/ragent-Qwen2.5-1.5B-Instruct-ragent-musique-musique-grpo
   
 resources:
-  memory: 50GB..
+  memory: 40GB..
   gpu:
     # 24GB or more vRAM
-    memory: 80GB..
+    memory: 40GB..80GB
     # One or more GPU
     count: 3
   # Shared memory (for multi-gpu)
   shm_size: 24GB
+
+volumes:
+ - /root/.cache:/root/.cache
