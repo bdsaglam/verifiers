@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -138,6 +139,12 @@ def train(
 
     # Load dataset
     train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
+    # TODO: Include all questions
+    train_dataset = train_dataset.filter(lambda x: len(x["question_decomposition"]) < 2)
+    # TODO: Include all paragraphs
+    train_dataset = train_dataset.map(
+        lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < 0.2]}
+    )
     log.info(f"Train dataset: {len(train_dataset)}")
 
     eval_dataset = prepare_dataset(eval_dataset_path, eval_dataset_name, eval_dataset_split)
