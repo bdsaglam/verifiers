@@ -5,6 +5,7 @@ import torch
 import typer
 from peft import AutoPeftModelForCausalLM
 from transformers import AutoTokenizer
+from verifiers.utils.cuda import get_half_precision_dtype
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def save_artifacts(model, tokenizer, output_dir: Path):
 def merge_adapters_and_publish(
     model_id: str = typer.Argument(..., help="Model name or path to merge adapters from"),
     out: Path = typer.Option(..., help="Output directory to save model and tokenizer"),
-    torch_dtype: str = "bfloat16",
+    torch_dtype: str = get_half_precision_dtype(),
 ):
     if isinstance(torch_dtype, str) and torch_dtype != "auto":
         torch_dtype = getattr(torch, torch_dtype)

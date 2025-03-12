@@ -31,7 +31,7 @@ dev = [
     "tabulate",
 ]
 retrieve = [
-    "bm25s[full]",
+    "bm25s",
     "PyStemmer",
     "huggingface_hub",
     "jax[cpu]",

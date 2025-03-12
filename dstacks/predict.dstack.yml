@@ -1,0 +1,34 @@
+type: task
+name: ragent-predict
+
+# Size of the cluster
+nodes: 1
+
+python: "3.11"
+nvcc: true
+
+
+env:
+  - HF_TOKEN=
+
+commands:
+  - pip install -e '.[retrieve]'
+  - python examples/ragent.py predict \
+    --model bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique \
+    --dataset-path bdsaglam/musique-mini \
+    --dataset-name answerable \
+    --dataset-split validation \
+    --retriever bm25 \
+    --n-env-jobs 1 \
+    --batch-size 32
+    --out outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo.jsonl
+  - huggingface-cli upload \
+    --repo-type dataset \
+    bdsaglam/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo \
+    outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo.jsonl
+  
+resources:
+  memory: 16GB..
+  gpu:
+    memory: 16GB..32GB
+    count: 1

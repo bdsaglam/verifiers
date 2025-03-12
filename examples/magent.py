@@ -17,6 +17,7 @@ from verifiers.imports import LLM, SamplingParams
 from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
 from verifiers.rubrics.math import int_answer_reward_func, numerical_equivalence_reward_func
+from verifiers.utils.cuda import get_half_precision_dtype
 
 load_dotenv()
 
@@ -278,7 +279,7 @@ def predict(
     llm = LLM(
         model=model_name,
         trust_remote_code=True,
-        dtype="bfloat16",
+        dtype=get_half_precision_dtype(),
         gpu_memory_utilization=0.8,
         seed=seed,
     )

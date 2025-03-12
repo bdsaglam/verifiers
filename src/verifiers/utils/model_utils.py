@@ -3,6 +3,7 @@ from typing import Any, Dict, Tuple, Union
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from verifiers.utils.cuda import get_half_precision_dtype
 
 
 def is_liger_available() -> bool:
@@ -12,7 +13,7 @@ def is_liger_available() -> bool:
 def get_model(model_name: str, model_kwargs: Union[Dict[str, Any], None] = None) -> Any:
     if model_kwargs is None:
         model_kwargs = dict(
-            torch_dtype=torch.bfloat16,
+            torch_dtype=getattr(torch, get_half_precision_dtype()),
             use_cache=False,
         )
     if is_liger_available():

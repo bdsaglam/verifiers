@@ -14,6 +14,7 @@ from tqdm import tqdm
 from trl import GRPOConfig
 
 import verifiers as vf
+from verifiers.utils.cuda import get_half_precision_dtype
 import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
@@ -116,7 +117,7 @@ def train(
     max_prompt_length: int = typer.Option(4096, "-pl"),
     max_completion_length: int = typer.Option(1024, "-cl"),
     num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
-    batch_size: int = typer.Option(32, "-bs", help="Per device batch size"),
+    batch_size: int = typer.Option(32, "--batch-size", "-bs"),
     gradient_accumulation_steps: int = typer.Option(4, "-gacc"),
     learning_rate: float = typer.Option(1e-6, "-lr"),
     peft: bool = typer.Option(True, help="Use PEFT"),
@@ -252,11 +253,11 @@ def predict(
     retriever: str = typer.Option("lexical", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
     few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
-    n_env_jobs: int = typer.Option(32, help="Number of environments to run in parallel"),
-    max_completion_length: int = typer.Option(1024, "-cl"),
-    batch_size: int = typer.Option(32, "-bs"),
-    temperature: float = typer.Option(0.3, "-t"),
-    top_p: float = typer.Option(0.95, "-p"),
+    n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
+    batch_size: int = typer.Option(32, "--batch-size", "-bs"),
+    max_completion_length: int = typer.Option(1024, "-cl", "--max-completion-length"),
+    temperature: float = typer.Option(0.3),
+    top_p: float = typer.Option(0.95),
     out: Path | None = typer.Option(None, "--out"),
     seed: int = 89,
 ):
@@ -283,7 +284,7 @@ def predict(
     llm = LLM(
         model=model_path,
         trust_remote_code=True,
-        dtype="bfloat16",
+        dtype=get_half_precision_dtype(),
         gpu_memory_utilization=0.8,
         seed=seed,
     )
