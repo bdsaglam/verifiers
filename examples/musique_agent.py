@@ -89,7 +89,7 @@ def get_model_name(model_path: str) -> str:
     if Path(model_path).exists():
         with open(Path(model_path) / "config.json", "r") as f:
             config = json.load(f)
-        return config["_name_or_path"]
+        return config["_name_or_path"].split("/")[-1]
     else:
         return model_path.split("/")[-1]
 
