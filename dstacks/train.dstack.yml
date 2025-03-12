@@ -1,6 +1,6 @@
 type: task
 # The name is optional, if not specified, generated randomly
-name: agent-rl-train
+name: ragent-train
 
 # Size of the cluster
 nodes: 1
