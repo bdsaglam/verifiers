@@ -19,7 +19,6 @@ def preprocess_dataset(dataset: Dataset) -> Dataset:
             "supporting_titles": [p["title"] for p in x["paragraphs"] if p["is_supporting"]],
         },
         remove_columns=[
-            "id",
             "question",
             "paragraphs",
             "question_decomposition",

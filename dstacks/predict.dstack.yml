@@ -6,10 +6,12 @@ nodes: 1
 
 python: "3.11"
 nvcc: true
+# image: huggingface/trl-latest-gpu:latest
 
 
 env:
   - HF_TOKEN
+  - MODEL=Qwen/Qwen2.5-1.5B-Instruct
   - LD_LIBRARY_PATH=/opt/conda/envs/workflow/lib/python3.11/site-packages/nvidia/nvjitlink/lib:/usr/local/cuda-12.3/lib64
 
 commands:
@@ -17,21 +19,21 @@ commands:
   - pip install bm25s PyStemmer huggingface_hub
   - >
     python examples/ragent.py predict
-    --model bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique
+    --model $MODEL
     --retriever bm25
     --n-env-jobs 1
     --batch-size 32
-    --out outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo.jsonl
+    --out predictions.jsonl
   - >
     huggingface-cli upload
     --repo-type dataset
-    bdsaglam/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo
-    outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo.jsonl
+    bdsaglam/musique-predictions-ragent
+    predictions.jsonl
   
 resources:
   memory: 16GB..
   gpu:
-    memory: 16GB..32GB
+    memory: 24GB..32GB
     count: 1
 
 volumes:
