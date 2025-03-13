@@ -331,9 +331,9 @@ def predict(
 
     # Save trajectories to jsonl file
     if out is None:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
-        out = Path("./outputs") / f"predictions-{dataset_id}-{model_path.split('/')[-1]}-{timestamp}.jsonl"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out = Path("./outputs") / f"{dataset_id}-predictions-ragent-{model_path.split('/')[-1]}-{timestamp}.jsonl"
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
