@@ -31,6 +31,8 @@ dev = [
     "matplotlib",
     "pandas",
     "tabulate",
+    "dvc",
+    "dvc-s3",
 ]
 retrieve = [
     "bm25s",

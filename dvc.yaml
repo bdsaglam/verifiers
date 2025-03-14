@@ -1,0 +1,39 @@
+stages:
+  predict:
+    cmd: >-
+      python scripts/ragent.py predict
+      --n-env-jobs 32
+      --batch-size 32
+      --model ${model.name}
+      --dataset-path ${dataset.path}
+      --dataset-name ${dataset.name} 
+      --dataset-split ${dataset.split}
+      --retriever ${retriever.name}
+      --retriever-top-k ${retriever.top_k}
+      --out data/generated/predictions.jsonl
+    deps:
+      - scripts/ragent.py
+    params:
+      - model.name
+      - model.temperature
+      - model.top_p
+      - dataset.path
+      - dataset.name
+      - dataset.split
+      - retriever
+      - retriever.top_k
+    outs:
+      - data/generated/predictions.jsonl
+    
+  evaluate:
+    cmd: >-
+      python scripts/evaluate.py
+      data/generated/predictions.jsonl
+      --output-dir data/generated/
+    deps:
+      - scripts/evaluate.py
+      - data/generated/predictions.jsonl
+    outs:
+      - data/generated/results.jsonl
+    metrics:
+      - data/generated/scores.json

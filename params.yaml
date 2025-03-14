@@ -1,0 +1,15 @@
+dataset:
+  path: bdsaglam/musique-mini
+  name: answerable
+  split: validation
+
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  temperature: 0.3
+  top_p: 0.95
+
+retriever:
+  name: semantic
+  top_k: 2
+
+run: 1

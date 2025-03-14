@@ -47,13 +47,15 @@ python scripts/merge.py \
 # export MODEL=meta-llama/Llama-3.1-8B-Instruct
 export MODEL=bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique
 export RETRIEVER=hybrid
+export RETRIEVER_TOP_K=2
 python examples/ragent.py predict \
     --model $MODEL \
     --dataset-path bdsaglam/musique-mini \
     --dataset-name answerable \
     --dataset-split validation \
     --retriever $RETRIEVER \
+    --retriever-top-k $RETRIEVER_TOP_K \
     --n-env-jobs 32 \
     --batch-size 32 \
-    --out outputs/ragent/$MODEL/predictions-musique-mini-$RETRIEVER.jsonl
+    --out outputs/ragent/$MODEL/predictions-musique-mini-$RETRIEVER-$RETRIEVER_TOP_K.jsonl
 ```
