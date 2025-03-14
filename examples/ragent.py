@@ -7,7 +7,6 @@ from typing import Any
 
 import torch
 import typer
-import wandb
 from accelerate import Accelerator
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
@@ -16,6 +15,7 @@ from tqdm import tqdm
 from trl import GRPOConfig
 
 import verifiers as vf
+import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
@@ -165,7 +165,7 @@ def train(
     )
 
     # Use provided suffix or default based on env_type
-    run_name = f"ragent-{get_model_name(model_path)}-{dataset_path.split('/')[-1]}-grpo"
+    run_name = f"{get_model_name(model_path)}-ragent-grpo-{dataset_path.split('/')[-1]}"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
@@ -257,7 +257,7 @@ def predict(
     dataset_path: str = typer.Option("bdsaglam/musique-mini"),
     dataset_name: str = typer.Option("answerable"),
     dataset_split: str = typer.Option("validation"),
-    retriever: str = typer.Option("lexical", help="Retriever to use"),
+    retriever: str = typer.Option("bm25", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
     few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
@@ -269,6 +269,8 @@ def predict(
     seed: int = 89,
 ):
     """Predict with a model on a dataset using RAG-based verification."""
+    if n_env_jobs > 1 and retriever == "bm25":
+        raise ValueError("BM25 does not support parallel environments. Run rerank service and use 'lexical', instead.")
 
     # Load dataset
     dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
