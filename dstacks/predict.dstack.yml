@@ -24,10 +24,11 @@ commands:
     --n-env-jobs 1
     --batch-size 32
     --out predictions.jsonl
+  - export SUFFIX=$(echo $MODEL | rev | cut -d'/' -f1 | rev)
   - >
     huggingface-cli upload
     --repo-type dataset
-    bdsaglam/musique-predictions-ragent
+    bdsaglam/musique-predictions-ragent-${SUFFIX}
     predictions.jsonl
   
 resources:
