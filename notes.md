@@ -19,8 +19,8 @@ accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ra
 ### Publish manually
 ```sh
 huggingface-cli upload --repo-type model \
-    ragent-Qwen2.5-1.5B-Instruct-musique-grpo \
-    ./outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo
+    Qwen2.5-1.5B-Instruct-ragent-grpo-musique \
+    ./outputs/Qwen2.5-1.5B-Instruct-ragent-grpo-musique
 ```
 
 
@@ -28,7 +28,7 @@ huggingface-cli upload --repo-type model \
 
 ```sh
 accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ragent.py train \
-    --model 'outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo' \
+    --model './outputs/Qwen2.5-1.5B-Instruct-ragent-grpo-musique' \
     2>&1 | tee tmp/ragent-qwen-musique-grpo-resume.log
 
 ```
@@ -37,15 +37,23 @@ accelerate launch --config-file configs/zero3.yaml --num-processes 2 examples/ra
 
 ```sh
 python scripts/merge.py \
-    outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo/checkpoint-1000 \
-    --out outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged
+    ./outputs/Qwen2.5-1.5B-Instruct-ragent-grpo-musique/checkpoint-1000 \
+    --out outputs/Qwen2.5-1.5B-Instruct-ragent-grpo-musique-merged
 ```
 
 ```sh
+# export MODEL=openai/meta-llama/Llama-3.3-70B-Instruct-Turbo
+# export MODEL=Qwen/Qwen2.5-32B-Instruct
+# export MODEL=meta-llama/Llama-3.1-8B-Instruct
+export MODEL=bdsaglam/Qwen2.5-1.5B-Instruct-ragent-musique
+export RETRIEVER=hybrid
 python examples/ragent.py predict \
-    --model outputs/ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged \
+    --model $MODEL \
     --dataset-path bdsaglam/musique-mini \
     --dataset-name answerable \
     --dataset-split validation \
-    --out outputs/predictions-ragent-Qwen2.5-1.5B-Instruct-musique-grpo-merged.jsonl
+    --retriever $RETRIEVER \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --out outputs/ragent/$MODEL/predictions-musique-mini-$RETRIEVER.jsonl
 ```
