@@ -1,7 +1,7 @@
 ## Setup
 
 ```sh
-uvx dstack config --url https://sky.dstack.ai --project bdsaglam --token $DSSTACK_TOKEN
+uvx dstack config --url https://sky.dstack.ai --project bdsaglam --token $DSTACK_TOKEN
 ```
 
 ## Predict
