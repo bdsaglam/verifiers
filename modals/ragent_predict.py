@@ -21,7 +21,14 @@ log = logging.getLogger(__name__)
 # Constants
 MINUTES = 60
 HOURS = 60 * MINUTES
-APP_NAME = "ragent"
+
+# Define the volumes
+pretrained_volume = modal.Volume.from_name("pretrained-vol", create_if_missing=True)
+runs_volume = modal.Volume.from_name("runs-vol", create_if_missing=True)
+VOLUME_CONFIG: dict[Union[str, PurePosixPath], modal.Volume] = {
+    "/pretrained": pretrained_volume,
+    "/runs": runs_volume,
+}
 
 # GPU Configuration
 GPU_CONFIG = os.environ.get("GPU_CONFIG", "a100:1")
@@ -29,29 +36,13 @@ if len(GPU_CONFIG.split(":")) <= 1:
     N_GPUS = int(os.environ.get("N_GPUS", 1))
     GPU_CONFIG = f"{GPU_CONFIG}:{N_GPUS}"
 
-# Modal setup
-stub = modal.Stub(APP_NAME)
-volume = modal.NetworkFileSystem.persisted("ml")
-
 # Define the Modal image with required dependencies
 image = (
-    modal.Image.from_registry("nvidia/cuda:12.1.0-base-ubuntu22.04", add_python="3.11")
-    .pip_install(
-        "accelerate",
-        "datasets",
-        "deepspeed==0.15.3",
-        "joblib>=1.4.2",
-        "liger-kernel>=0.5.2",
-        "peft",
-        "pydantic",
-        "python-dotenv",
-        "rich",
-        "torch",
-        "tqdm",
-        "trl @ git+https://github.com/huggingface/trl.git",
-        "typer",
-        "vllm==0.7.0",
-        "wandb",
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install_from_pyproject(
+        pyproject_toml="pyproject.toml",
+        extra_options="retrieve",
+        gpu=GPU_CONFIG,
     )
     .env(
         {
@@ -62,12 +53,8 @@ image = (
     .entrypoint([])
 )
 
-pretrained_volume = modal.Volume.from_name("pretrained-vol", create_if_missing=True)
-runs_volume = modal.Volume.from_name("runs-vol", create_if_missing=True)
-VOLUME_CONFIG: dict[Union[str, PurePosixPath], modal.Volume] = {
-    "/pretrained": pretrained_volume,
-    "/runs": runs_volume,
-}
+# Define the app
+app = modal.App("ragent-predict", image=image)
 
 
 def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
@@ -119,11 +106,10 @@ def get_model_name(model_path: str) -> str:
         return model_path.split("/")[-1]
 
 
-@stub.function(
-    gpu=modal.gpu.A100(memory=40),
-    network_file_systems=VOLUME_CONFIG,
-    image=image,
-    timeout=24 * HOURS,
+@app.function(
+    gpu=GPU_CONFIG,
+    volumes=VOLUME_CONFIG,
+    timeout=4 * HOURS,
     secrets=[
         modal.Secret.from_name("huggingface-secret"),
         modal.Secret.from_name("wandb-secret"),
@@ -187,6 +173,7 @@ def predict(
             seed=seed,
         )
         print("Model initialized successfully")
+        VOLUME_CONFIG["/pretrained"].commit()
 
         # Set up sampling parameters
         sampling_params = SamplingParams(
@@ -203,7 +190,7 @@ def predict(
         # Process dataset in batches with progress bar
         ds = vf_env.get_dataset()
         records = []
-        for i in range(0, len(ds), batch_size):
+        for i in tqdm(range(0, len(ds), batch_size), desc="Processing batches", total=len(ds) // batch_size):
             batch_start = i
             batch_end = min(i + batch_size, len(ds))
             print(f"Processing batch {batch_start}-{batch_end}/{len(ds)}")
@@ -247,7 +234,7 @@ def predict(
         raise
 
 
-@stub.local_entrypoint()
+@app.local_entrypoint()
 def main(
     model_path: str = "Qwen/Qwen2.5-7B-Instruct",
     retriever: str = "bm25",
@@ -263,7 +250,3 @@ def main(
     )
     print(f"Dataset ID: {result['pred_ds_id']}")
     print(f"Processed {result['n_processed']}/{result['n_total']} examples")
-
-
-if __name__ == "__main__":
-    stub.serve()
