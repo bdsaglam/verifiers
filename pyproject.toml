@@ -29,6 +29,7 @@ dependencies = [
 dev = [
     "jupyter>=1.1.1",
     "matplotlib",
+    "seaborn",
     "pandas",
     "tabulate",
     "dvc",
