@@ -120,7 +120,7 @@ def train(
     num_generations: int = typer.Option(8, "-g", help="Number of generations per prompt"),
     batch_size: int = typer.Option(32, "--batch-size", "-bs"),
     gradient_accumulation_steps: int = typer.Option(4, "-gacc"),
-    learning_rate: float = typer.Option(1e-6, "-lr"),
+    learning_rate: float = typer.Option(1e-5, "-lr"),
     peft: bool = typer.Option(True, help="Use PEFT"),
     lora_r: int = typer.Option(32, help="LORA rank"),
     lora_alpha: int = typer.Option(64, help="LORA alpha"),
@@ -139,8 +139,6 @@ def train(
 
     # Load dataset
     train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
-    # TODO: Include all questions
-    train_dataset = train_dataset.filter(lambda x: len(x["question_decomposition"]) < 2)
     # TODO: Include all paragraphs
     train_dataset = train_dataset.map(
         lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < 0.2]}
