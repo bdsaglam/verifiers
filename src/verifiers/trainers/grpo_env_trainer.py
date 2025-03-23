@@ -196,8 +196,20 @@ class GRPOEnvTrainer(GRPOTrainer):
         self._metrics[mode]["reward"].append(rewards.mean().item())
         self._metrics[mode]["reward_std"].append(std_grouped_rewards.mean().item())
 
+        prompts_to_log = gather_object(prompts)
+
+        n_messages = torch.tensor([len(messages) for messages in prompts_to_log], dtype=torch.float32)
+        self._metrics[mode]["n_messages"].append(n_messages.mean().item())
+        self._metrics[mode]["n_messages_std"].append(n_messages.std().item())
+
+        n_tool_calls = torch.tensor(
+            [sum([1 for message in messages if message["role"] == "tool"]) for messages in prompts_to_log],
+            dtype=torch.float32,
+        )
+        self._metrics[mode]["n_tool_calls"].append(n_tool_calls.mean().item())
+        self._metrics[mode]["n_tool_calls_std"].append(n_tool_calls.std().item())
+
         if self.log_completions and self.state.global_step % self.args.logging_steps == 0:
-            prompts_to_log = gather_object(prompts)
             completions_to_log = gather_object(completions)
             rewards_to_log = rewards.tolist()
             inputs_to_log = gather_object(inputs)

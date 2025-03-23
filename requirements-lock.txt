@@ -262,7 +262,6 @@ uri-template==1.3.0
 urllib3==2.3.0
 uvicorn==0.34.0
 uvloop==0.21.0
--e git+ssh://git@github.com/bdsaglam/verifiers.git@95a1b966efee54a01ef768b5fd59749f6c0e299d#egg=verifiers
 virtualenv==20.29.2
 vllm==0.7.0
 wandb==0.19.7

@@ -92,6 +92,7 @@ class MultiStepEnv(Environment):
                 "prompt_ids": [],
                 "completion_ids": [],
                 "completion_mask": [],
+                "metrics": {},
             }
             for input in inputs
         ]
@@ -104,10 +105,13 @@ class MultiStepEnv(Environment):
         completion_messages = [s["messages"][s["n_prompt_messages"] :] for s in states]
         completion_ids = [s["completion_ids"] for s in states]
         completion_mask = [s["completion_mask"] for s in states]
+        metrics = [s["metrics"] for s in states]
+
         output = {
             "ids": completion_ids,
             "messages": completion_messages,
             "mask": completion_mask,
+            "metrics": metrics,
         }
         return output
 
