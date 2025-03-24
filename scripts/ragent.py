@@ -178,7 +178,7 @@ def train(
         num_generations=num_generations,
         temperature=0.5,
         beta=0.04,
-        scale_rewards=False,
+        # scale_rewards=False,
         reward_weights=None,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
