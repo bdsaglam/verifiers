@@ -5,6 +5,8 @@ stages:
       --n-env-jobs 32
       --batch-size 32
       --model ${model.name}
+      --temperature ${model.temperature}
+      --top-p ${model.top_p}
       --dataset-path ${dataset.path}
       --dataset-name ${dataset.name} 
       --dataset-split ${dataset.split}
