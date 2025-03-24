@@ -291,6 +291,7 @@ def predict(
         trust_remote_code=True,
         dtype=get_half_precision_dtype(),
         gpu_memory_utilization=0.8,
+        tensor_parallel_size=1,
         seed=seed,
     )
 
@@ -331,7 +332,8 @@ def predict(
     if out is None:
         dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        out = Path("./outputs") / f"{dataset_id}-predictions-ragent-{model_path.split('/')[-1]}-{timestamp}.jsonl"
+        model_name = model_path.split("/")[-1]
+        out = Path("./outputs") / f"{dataset_id}-predictions-ragent-{model_name}-{timestamp}.jsonl"
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
