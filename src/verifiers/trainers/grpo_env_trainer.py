@@ -173,7 +173,10 @@ class GRPOEnvTrainer(GRPOTrainer):
         # Normalize the rewards to compute the advantages
         mean_grouped_rewards = mean_grouped_rewards.repeat_interleave(self.num_generations, dim=0)  # type: ignore
         std_grouped_rewards = std_grouped_rewards.repeat_interleave(self.num_generations, dim=0)  # type: ignore
-        advantages = (rewards - mean_grouped_rewards) / (std_grouped_rewards + 1e-4)
+        advantages = rewards - mean_grouped_rewards
+        scale_rewards = False
+        if scale_rewards:
+            advantages = advantages / (std_grouped_rewards + 1e-4)
 
         # Slice to keep only the local part of the data
         process_slice = slice(
