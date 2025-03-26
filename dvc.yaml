@@ -1,10 +1,10 @@
 stages:
   predict:
     cmd: >-
-      python scripts/ragent.py predict
+      CUDA_VISIBLE_DEVICES=${devices} python scripts/ragent.py predict
       --n-env-jobs 32
       --batch-size 32
-      --model ${model.name}
+      --model ${model.path}
       --temperature ${model.temperature}
       --top-p ${model.top_p}
       --dataset-path ${dataset.path}
@@ -16,7 +16,7 @@ stages:
     deps:
       - scripts/ragent.py
     params:
-      - model.name
+      - model.path
       - model.temperature
       - model.top_p
       - dataset.path
@@ -24,6 +24,7 @@ stages:
       - dataset.split
       - retriever
       - retriever.top_k
+      - devices
     outs:
       - data/generated/predictions.jsonl
     
