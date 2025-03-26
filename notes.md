@@ -16,6 +16,21 @@ export CUDA_VISIBLE_DEVICES=0,1,2
 accelerate launch --config-file configs/zero3.yaml --num-processes 2 scripts/ragent.py train 2>&1 | tee tmp/ragent-qwen-musique-grpo.log
 ```
 
+```sh
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --model 'outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
+    --few-shot-prob 0.0 \
+    --retriever 'lexical' \
+    --retriever-top-k 1 \
+    --batch-size 32 \
+    --gradient-accumulation-steps 2 \
+    2>&1 | tee tmp/ragent-llama3-8b-round-2-$(date +%s).log
+```
+
 ### Publish manually
 ```sh
 huggingface-cli upload --repo-type model \
