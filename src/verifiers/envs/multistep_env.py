@@ -143,8 +143,7 @@ class MultiStepEnv(Environment):
             state["completion_mask"].extend([1] * new_completion_len)
             
             # update completion ids
-            state["completion_ids"] = list(llm_response.prompt_token_ids)  # type: ignore
-            state["completion_ids"].extend(list(llm_response.outputs[0].token_ids))
+            state["completion_ids"] = list(llm_response.prompt_token_ids) + list(llm_response.outputs[0].token_ids)
             state["completion_ids"] = state["completion_ids"][len(state["prompt_ids"]) :]
             
             is_completed = (
@@ -160,7 +159,12 @@ class MultiStepEnv(Environment):
             else:
                 state["messages"].append(self.env_response(state))
             
-            assert len(state["completion_mask"]) == len(state["completion_ids"])
+            try:
+                assert len(state["completion_mask"]) == len(state["completion_ids"])
+            except AssertionError:
+                import pdb; pdb.set_trace()
+                raise
+
             return idx, state
         
         if self.n_jobs == 1:

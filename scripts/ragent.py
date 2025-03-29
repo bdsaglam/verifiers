@@ -111,10 +111,10 @@ def train(
     eval_dataset_path: str = typer.Option("bdsaglam/musique"),
     eval_dataset_name: str = typer.Option("answerable"),
     eval_dataset_split: str = typer.Option("validation[:32]"),
-    retriever: str = typer.Option("lexical", help="Retriever to use"),
+    retriever: str = typer.Option("bm25", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
-    few_shot_prob: float = typer.Option(0.5, help="Probability of using few-shot examples"),
-    n_env_jobs: int = typer.Option(32, help="Number of environments to run in parallel"),
+    few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
+    n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
     max_completion_length: int = typer.Option(2048),
     num_generations: int = typer.Option(4),
@@ -228,10 +228,10 @@ def train(
     ]
     trainer = vf.GRPOEnvTrainer(
         model=model,
+        processing_class=tokenizer,
         peft_config=peft_config,
         env=vf_env,
         reward_funcs=reward_funcs,
-        processing_class=tokenizer,
         args=training_args,
         train_dataset=vf_env.get_dataset(),
         eval_dataset=vf_env.get_eval_dataset(),
@@ -261,7 +261,7 @@ def predict(
     max_completion_length: int = typer.Option(2048, "-cl", "--max-completion-length"),
     temperature: float = typer.Option(0.5),
     top_p: float = typer.Option(0.95),
-    out: Path | None = typer.Option(None, "--out"),
+    output_dir: Path = typer.Option("./outputs/"),
     seed: int = 89,
 ):
     """Predict with a model on a dataset using RAG-based verification."""
@@ -329,11 +329,10 @@ def predict(
             records.append(record)
 
     # Save trajectories to jsonl file
-    if out is None:
-        dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_name = model_path.split("/")[-1]
-        out = Path("./outputs") / f"{dataset_id}-predictions-ragent-{model_name}-{timestamp}.jsonl"
+    dataset_id = f"{dataset_path}-{dataset_name}-{dataset_split.split('[', 1)[0]}".replace("/", "-")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_name = model_path.split("/")[-1]
+    out = output_dir / f"{dataset_id}-predictions-ragent-{model_name}-{timestamp}.jsonl"
 
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)

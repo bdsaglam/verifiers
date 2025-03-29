@@ -212,6 +212,20 @@ class GRPOEnvTrainer(GRPOTrainer):
         self._metrics[mode]["n_tool_calls"].append(n_tool_calls.mean().item())
         self._metrics[mode]["n_tool_calls_std"].append(n_tool_calls.std().item())
 
+        _prompts_text = [
+            maybe_apply_chat_template({"prompt": messages}, self.processing_class)["prompt"]
+            for messages in prompts_to_log
+        ]
+        _prompt_inputs = self.processing_class(
+            _prompts_text,
+            return_tensors="pt",
+            padding=True,
+            padding_side="left",
+            add_special_tokens=False,  # type: ignore
+        )
+        self._metrics[mode]["seq_length"].append(_prompt_inputs["attention_mask"].sum(dim=1).float().mean().item())
+        self._metrics[mode]["seq_length_std"].append(_prompt_inputs["attention_mask"].sum(dim=1).float().std().item())
+
         if self.log_completions and self.state.global_step % self.args.logging_steps == 0:
             completions_to_log = gather_object(completions)
             rewards_to_log = rewards.tolist()
