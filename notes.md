@@ -26,7 +26,7 @@ accelerate launch \
     --config-file configs/zero3.yaml \
     --num-processes 3 \
     scripts/ragent.py train \
-    --model 'outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
+    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
     --datasets 'bdsaglam/musique,answerable,train;bdsaglam/hotpotqa-distractor,default,train' \
     --few-shot-prob 1.0 \
     --retriever 'hybrid' \
