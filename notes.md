@@ -34,6 +34,17 @@ accelerate launch \
     2>&1 | tee tmp/ragent-llama3-8b-round-2-$(date +%s).log
 ```
 
+```sh
+export CUDA_VISIBLE_DEVICES=0
+python scripts/ragent_unsloth.py train \
+--model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
+--few-shot-prob 1.0 \
+--retriever 'hybrid' \
+--retriever-top-k 1 \
+--n-env-jobs 1 \
+2>&1 | tee tmp/unsloth-ragent-llama3-8b-round-2-$(date +%s).log
+```
+
 ### Publish manually
 ```sh
 huggingface-cli upload --repo-type model \
