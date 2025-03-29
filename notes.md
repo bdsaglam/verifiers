@@ -11,24 +11,6 @@ export LD_LIBRARY_PATH=/home/baris/miniconda3/envs/verifiers/lib/python3.11/site
 
 ## Train
 
-
-```sh
-export CUDA_VISIBLE_DEVICES=0
-python scripts/ragent2.py train \
-    --model 'Qwen/Qwen2.5-1.5B-Instruct' \
-    --dataset-str 'bdsaglam/musique,answerable,train[:100];bdsaglam/hotpotqa-distractor,default,train[:100]' \
-    --few-shot-prob 1.0 \
-    --retriever 'hybrid' \
-    --retriever-top-k 1 \
-    --n-env-jobs 1 \
-    --batch-size 2 \
-    --gradient-accumulation-steps 8 \
-    --lora-r 16 \ 
-    --lora-alpha 16 \
-    2>&1 | tee tmp/ragent2-llama3-8b-round-2-$(date +%s).log
-```
-
-
 ```sh
 export CUDA_VISIBLE_DEVICES=0,1,2
 accelerate launch \
@@ -45,6 +27,7 @@ accelerate launch \
     --num-processes 2 \
     scripts/ragent.py train \
     --model 'outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
+    --datasets 'bdsaglam/musique,answerable,train[:100];bdsaglam/hotpotqa-distractor,default,train[:100]' \
     --few-shot-prob 1.0 \
     --retriever 'hybrid' \
     --retriever-top-k 1 \

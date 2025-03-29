@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import Generator, List
 
 from verifiers.metrics.musique import exact_match, f1
 from verifiers.models import Message
@@ -29,8 +29,15 @@ def musique_f1_reward_func(
     return [f1(predicted_answer, references) for predicted_answer, references in zip(predicted_answers, answers)]
 
 
-def _extract_retrieved_titles(content: str) -> list[str]:
+def extract_retrieved_titles(content: str) -> list[str]:
     return [title.strip() for title in re.findall(r"^# (.*)", content, re.MULTILINE)]
+
+
+def extract_all_retrieved_titles(trajectory: list[Message]) -> Generator[str, None, None]:
+    for msg in trajectory:
+        if msg["role"] != "tool":
+            continue
+        yield from extract_retrieved_titles(msg["content"])
 
 
 def musique_supporting_f1_reward_func(
@@ -39,11 +46,10 @@ def musique_supporting_f1_reward_func(
     **kwargs,
 ) -> List[float]:
     rewards = []
-    for completion in completions:
-        tool_messages = [msg for msg in completion if msg["role"] == "tool"]
-        retrieved_titles = [_extract_retrieved_titles(msg["content"]) for msg in tool_messages]
-        precision = len(set(retrieved_titles) & set(supporting_titles)) / len(retrieved_titles)
-        recall = len(set(retrieved_titles) & set(supporting_titles)) / len(supporting_titles)
+    for completion, _supporting_titles in zip(completions, supporting_titles):
+        retrieved_titles = set(extract_all_retrieved_titles(completion))
+        precision = len(retrieved_titles & set(_supporting_titles)) / len(retrieved_titles)
+        recall = len(retrieved_titles & set(_supporting_titles)) / len(supporting_titles)
         f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
         rewards.append(f1)
     return rewards

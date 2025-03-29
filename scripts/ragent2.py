@@ -8,7 +8,7 @@ from typing import Any
 import torch
 import typer
 from accelerate import Accelerator
-from datasets import Dataset, load_dataset
+from datasets import Dataset, concatenate_datasets, load_dataset
 from dotenv import load_dotenv
 from peft import LoraConfig
 from tqdm import tqdm
@@ -21,6 +21,7 @@ from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
 from verifiers.rubrics.musique import (
     musique_em_reward_func,
     musique_f1_reward_func,
+    musique_supporting_f1_reward_func,
 )
 from verifiers.tools import make_retrieve_tool
 from verifiers.trainers.grpo_env_trainer import GRPOEnvTrainer
@@ -39,17 +40,17 @@ app = typer.Typer()
 accelerator = Accelerator()
 
 
-def prepare_dataset(dataset_path: str, dataset_name: str, split: str) -> Dataset:
-    ds = load_dataset(dataset_path, dataset_name, split=split)
+def prepare_dataset(dataset_str: str) -> Dataset:
+    from verifiers.datasets.musique import preprocess_dataset
 
-    if "musique" in dataset_path:
-        from verifiers.datasets.musique import preprocess_dataset
-
+    ds_list = []
+    for s in dataset_str.split(";"):
+        path, name, split = s.split(",")
+        ds = load_dataset(path, name, split=split)
         ds = preprocess_dataset(ds)
-    else:
-        raise ValueError(f"Dataset {dataset_path} not supported")
+        ds_list.append(ds)
 
-    return ds
+    return concatenate_datasets(ds_list)
 
 
 def create_environment(
@@ -102,21 +103,17 @@ def get_model_name(model_path: str) -> str:
 @app.command("train")
 def train(
     model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
-    dataset_path: str = typer.Option("bdsaglam/musique"),
-    dataset_name: str = typer.Option("answerable"),
-    dataset_split: str = typer.Option("train"),
-    eval_dataset_path: str = typer.Option("bdsaglam/musique"),
-    eval_dataset_name: str = typer.Option("answerable"),
-    eval_dataset_split: str = typer.Option("validation[:32]"),
+    datasets_str: str = typer.Option("bdsaglam/musique,answerable,train", "--datasets"),
+    noise_rate: float = typer.Option(0.2, help="Noise rate to use"),
     retriever: str = typer.Option("bm25", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
     few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
-    max_completion_length: int = typer.Option(2048),
-    num_generations: int = typer.Option(4),
+    max_completion_length: int = typer.Option(1024),
+    num_generations: int = typer.Option(8),
     batch_size: int = typer.Option(16),
-    gradient_accumulation_steps: int = typer.Option(4),
+    gradient_accumulation_steps: int = typer.Option(2),
     learning_rate: float = typer.Option(1e-5),
     peft: bool = typer.Option(True),
     lora_r: int = typer.Option(32, help="LORA rank"),
@@ -132,15 +129,12 @@ def train(
     out.mkdir(parents=True, exist_ok=True)
 
     # Load dataset
-    train_dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
+    train_dataset = prepare_dataset(datasets_str)
     # TODO: Include all paragraphs
     train_dataset = train_dataset.map(
-        lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < 0.2]}
+        lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < noise_rate]}
     )
     log.info(f"Train dataset: {len(train_dataset)}")
-
-    eval_dataset = prepare_dataset(eval_dataset_path, eval_dataset_name, eval_dataset_split)
-    log.info(f"Eval dataset: {len(eval_dataset)}")
 
     # Load model and tokenizer
     model, tokenizer = get_model_and_tokenizer(model_path)
@@ -150,7 +144,6 @@ def train(
         tokenizer=tokenizer,
         retriever=retriever,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
         n_jobs=n_env_jobs,
         top_k=retriever_top_k,
         few_shot_prob=few_shot_prob,
@@ -171,7 +164,7 @@ def train(
         warmup_steps=10,
         adam_beta1=0.9,
         adam_beta2=0.99,
-        max_grad_norm=0.01,
+        max_grad_norm=0.1,
         num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         num_generations=num_generations,
         temperature=0.5,
@@ -222,6 +215,7 @@ def train(
     reward_funcs = [
         musique_em_reward_func,
         musique_f1_reward_func,
+        musique_supporting_f1_reward_func,
         *vf_env.get_reward_funcs(),
     ]
     trainer = GRPOEnvTrainer(
@@ -242,12 +236,8 @@ def train(
     if wandb.run is not None:
         wandb.run.config.update(
             {
-                "dataset_path": dataset_path,
-                "dataset_name": dataset_name,
-                "dataset_split": dataset_split,
-                "eval_dataset_path": eval_dataset_path,
-                "eval_dataset_name": eval_dataset_name,
-                "eval_dataset_split": eval_dataset_split,
+                "dataset_list": datasets_str,
+                "noise_rate": noise_rate,
                 "retriever": retriever,
                 "retriever_top_k": retriever_top_k,
                 "few_shot_prob": few_shot_prob,
@@ -274,9 +264,9 @@ def train(
 @app.command("predict")
 def predict(
     model_path: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
-    dataset_path: str = typer.Option("bdsaglam/musique-mini"),
+    dataset_path: str = typer.Option("bdsaglam/musique"),
     dataset_name: str = typer.Option("answerable"),
-    dataset_split: str = typer.Option("validation"),
+    dataset_split: str = typer.Option("train"),
     retriever: str = typer.Option("bm25", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
     few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
@@ -293,7 +283,7 @@ def predict(
         raise ValueError("BM25 does not support parallel environments. Run rerank service and use 'lexical', instead.")
 
     # Load dataset
-    dataset = prepare_dataset(dataset_path, dataset_name, dataset_split)
+    dataset = prepare_dataset(f"{dataset_path},{dataset_name},{dataset_split}")
     log.info(f"Dataset: {len(dataset)}")
 
     # Load model and tokenizer

@@ -13,11 +13,15 @@ from tqdm import tqdm
 from trl import GRPOConfig
 
 import verifiers as vf
+from verifiers.envs.code_env import CodeEnv
+from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
 from verifiers.parsers.xml_parser import XMLParser
 from verifiers.prompts import CALCULATOR_FEW_SHOT, CODE_FEW_SHOT
 from verifiers.rubrics.math import int_answer_reward_func, numerical_equivalence_reward_func
+from verifiers.trainers.grpo_env_trainer import GRPOEnvTrainer
 from verifiers.utils.cuda import get_half_precision_dtype
+from verifiers.utils.model_utils import get_model_and_tokenizer, get_tokenizer
 
 load_dotenv()
 
@@ -81,7 +85,7 @@ def create_environment(
         assistant_parser = XMLParser(fields=["think", ("code", "answer")])
         env_parser = XMLParser(fields=["output"])
 
-        vf_env = vf.CodeEnv(
+        vf_env = CodeEnv(
             code_executor=code_executor,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
@@ -97,7 +101,7 @@ def create_environment(
         assistant_parser = XMLParser(fields=["think", ("tool", "answer")])
         env_parser = XMLParser(fields=["result"])
 
-        vf_env = vf.ToolEnv(
+        vf_env = ToolEnv(
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             tokenizer=tokenizer,
@@ -159,7 +163,7 @@ def train(
     log.info(f"Eval dataset: {len(eval_dataset)}")
 
     # Load model and tokenizer
-    model, tokenizer = vf.get_model_and_tokenizer(model_name)
+    model, tokenizer = get_model_and_tokenizer(model_name)
 
     # Initialize environment based on env_type
     vf_env = create_environment(
@@ -222,7 +226,7 @@ def train(
         numerical_equivalence_reward_func,
         *vf_env.get_reward_funcs(),
     ]
-    trainer = vf.GRPOEnvTrainer(
+    trainer = GRPOEnvTrainer(
         model=model,
         peft_config=peft_config,
         env=vf_env,
@@ -265,7 +269,7 @@ def predict(
     log.info(f"Dataset: {len(dataset)}")
 
     # Load model and tokenizer
-    tokenizer = vf.get_tokenizer(model_name)
+    tokenizer = get_tokenizer(model_name)
 
     # Initialize environment based on env_type
     env = create_environment(

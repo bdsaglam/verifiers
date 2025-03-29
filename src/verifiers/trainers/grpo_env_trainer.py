@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 from accelerate.utils import broadcast_object_list, gather, gather_object
