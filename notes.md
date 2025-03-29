@@ -21,13 +21,13 @@ accelerate launch \
 ```
 
 ```sh
-export CUDA_VISIBLE_DEVICES=1,2,3
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 accelerate launch \
     --config-file configs/zero3.yaml \
-    --num-processes 2 \
+    --num-processes 3 \
     scripts/ragent.py train \
     --model 'outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
-    --datasets 'bdsaglam/musique,answerable,train[:100];bdsaglam/hotpotqa-distractor,default,train[:100]' \
+    --datasets 'bdsaglam/musique,answerable,train;bdsaglam/hotpotqa-distractor,default,train' \
     --few-shot-prob 1.0 \
     --retriever 'hybrid' \
     --retriever-top-k 1 \
