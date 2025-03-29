@@ -87,12 +87,6 @@ def create_environment(
     return vf_env
 
 
-def save_artifacts(model, tokenizer, model_id: str, hub_dir: Path):
-    log.info(f"Saving model and tokenizer locally: {model_id}")
-    model.save_pretrained(hub_dir / model_id)
-    tokenizer.save_pretrained(hub_dir / model_id)
-
-
 def get_model_name(model_path: str) -> str:
     if Path(model_path).exists():
         with open(Path(model_path) / "config.json", "r") as f:
@@ -104,7 +98,7 @@ def get_model_name(model_path: str) -> str:
 
 @app.command("train")
 def train(
-    model_path: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
+    model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
     dataset_path: str = typer.Option("bdsaglam/musique"),
     dataset_name: str = typer.Option("answerable"),
     dataset_split: str = typer.Option("train"),
@@ -160,7 +154,8 @@ def train(
     )
 
     # Use provided suffix or default based on env_type
-    run_name = f"{get_model_name(model_path)}-ragent-grpo-{dataset_path.split('/')[-1]}"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_name = f"{get_model_name(model_path)}-ragent-grpo-{timestamp}"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
@@ -239,6 +234,32 @@ def train(
 
     # Start training
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+
+    # Update experiment configs
+    if wandb.run is not None:
+        wandb.run.config.update(
+            {
+                "dataset_path": dataset_path,
+                "dataset_name": dataset_name,
+                "dataset_split": dataset_split,
+                "eval_dataset_path": eval_dataset_path,
+                "eval_dataset_name": eval_dataset_name,
+                "eval_dataset_split": eval_dataset_split,
+                "retriever": retriever,
+                "retriever_top_k": retriever_top_k,
+                "few_shot_prob": few_shot_prob,
+                "n_env_jobs": n_env_jobs,
+                "max_prompt_length": max_prompt_length,
+                "max_completion_length": max_completion_length,
+                "num_generations": num_generations,
+                "batch_size": batch_size,
+                "gradient_accumulation_steps": gradient_accumulation_steps,
+                "learning_rate": learning_rate,
+                "peft": peft,
+                "lora_r": lora_r,
+                "lora_alpha": lora_alpha,
+            }
+        )
 
     # Cleanup
     wandb.finish()
