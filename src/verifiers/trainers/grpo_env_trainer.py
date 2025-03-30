@@ -280,17 +280,6 @@ class GRPOEnvTrainer(GRPOTrainer):
 
         steps = [str(step)] * len(rewards_to_log)
 
-        # Log raw completions
-        df = pd.DataFrame(
-            {
-                "step": steps,
-                "prompt": prompts_to_log,
-                "completion": completions_to_log,
-                "reward": rewards_to_log,
-            }
-        )
-        wandb.log({"completions": wandb.Table(dataframe=df)})
-
         # Create a formatted table similar to rich table
         table_data = []
         for step, input, prompt, completion, reward in zip(
