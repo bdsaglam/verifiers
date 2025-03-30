@@ -51,10 +51,11 @@ accelerate launch \
     --num-processes 3 \
     scripts/ragent.py train \
     --model 'outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
+    --run-name 'Llama-3.1-8B-Instruct-ragent-grpo-musique-merged-ragent-grpo-20250329_222430' \
     --few-shot-prob 1.0 \
     --retriever 'hybrid' \
-    --n-env-jobs 16 \
     --retriever-top-k 1 \
+    --n-env-jobs 16 \
     --resume-from-checkpoint \
     2>&1 | tee tmp/ragent-llama3-8b-round-2-$(date +%s).log
 
