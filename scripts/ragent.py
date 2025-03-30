@@ -122,6 +122,7 @@ def train(
     report_to: str = typer.Option("wandb", help="Report to wandb"),
     push_to_hub: bool = typer.Option(True, help="Push to hub"),
     out: Path = typer.Option("./outputs/"),
+    run_name: str | None = None,
     resume_from_checkpoint: bool = typer.Option(False, help="Resume training from a checkpoint"),
 ):
     """Train a model using GRPO for code generation or tool use."""
@@ -150,8 +151,9 @@ def train(
     )
 
     # Use provided suffix or default based on env_type
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_name = f"{get_model_name(model_path)}-ragent-grpo-{timestamp}"
+    if run_name is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_name = f"{get_model_name(model_path)}-ragent-grpo-{timestamp}"
 
     training_args = GRPOConfig(
         output_dir=out / run_name,
