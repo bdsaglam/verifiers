@@ -87,3 +87,25 @@ python scripts/ragent.py predict \
     --batch-size 32 \
     --out outputs/ragent/$MODEL/predictions-musique-mini-$RETRIEVER-$RETRIEVER_TOP_K.jsonl
 ```
+
+
+## Rerank
+
+```sh
+curl 127.0.0.1:8930/rerank \
+    -X POST \
+    -d '{"query": "What is Deep Learning?", "texts": ["Neural networks are a type of machine learning model.", "Symbolic AI is a type of machine learning model."]}' \
+    -H 'Content-Type: application/json'
+
+curl http://localhost:8931/rerank \
+    -X POST \
+    -d '{"query": "What is Deep Learning?", "texts": ["Neural networks are a type of machine learning model.", "Symbolic AI is a type of machine learning model."]}' \
+    -H 'Content-Type: application/json'
+
+curl http://localhost:8931/rerank \
+    -X POST \
+    -d '{"query": "What is Deep Learning?", "texts": ["Neural networks are a type of machine learning model.", "Symbolic AI is a type of machine learning model."], "model": "tei"}' \
+    -H 'Content-Type: application/json'
+```
+
+
