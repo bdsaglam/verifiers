@@ -19,6 +19,7 @@ import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
+from verifiers.rubrics.language import natural_language_reward_func
 from verifiers.rubrics.musique import (
     musique_em_reward_func,
     musique_f1_reward_func,
@@ -135,6 +136,8 @@ def train(
     train_dataset = train_dataset.map(
         lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < noise_rate]}
     )
+    # TODO: Remove this
+    # train_dataset = train_dataset.filter(lambda x: len(x["supporting_titles"]) > 2)
     log.info(f"Train dataset: {len(train_dataset)}")
 
     # Load model and tokenizer
@@ -218,6 +221,7 @@ def train(
         musique_em_reward_func,
         musique_f1_reward_func,
         musique_supporting_f1_reward_func,
+        natural_language_reward_func,
         *vf_env.get_reward_funcs(),
     ]
     trainer = GRPOEnvTrainer(
