@@ -175,9 +175,14 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
-    def retrieve(query: str, run_context: RunContext, **kwargs) -> str:
-        """Search for relevant documents by the query. The results become better if the query is more specific."""
-        docs = run_context["input"]["docs"]
+    def retrieve(query: str, exclude_docs: list[str] = [], run_context: RunContext | None = None, **kwargs) -> str:
+        """
+        Search for relevant documents by the query. The results become better if the query is more specific.
+        Args:
+            query: The query to search for.
+            exclude_docs: The list of document titles (without #) to exclude from the results. Defaults to empty list.
+        """
+        docs = [doc for doc in run_context["input"]["docs"] if doc["title"].strip() not in exclude_docs]
         try:
             retrieved_docs = retriever(docs, query)
         except Exception as e:

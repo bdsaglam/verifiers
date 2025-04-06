@@ -5,6 +5,7 @@ def _make_doc(p: dict) -> dict:
     return {
         "id": p["idx"],
         "text": f"# {p['title']}\n{p['paragraph_text']}",
+        "title": p["title"],
         "is_supporting": p["is_supporting"],
     }
 
