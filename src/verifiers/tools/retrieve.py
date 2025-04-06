@@ -1,7 +1,8 @@
+import re
 from collections import defaultdict
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
-from verifiers.models import RunContext
+from verifiers.models import Message, RunContext
 
 
 def golden_retriever(docs: list[dict], query: str) -> list[dict]:
@@ -47,9 +48,7 @@ def make_bm25_retriever(
             stemmer=stemmer,
         )
         retriever.index(tokenized_corpus)
-        results, scores = retriever.retrieve(
-            bm25s.tokenize(query, stemmer=stemmer), k=k
-        )
+        results, scores = retriever.retrieve(bm25s.tokenize(query, stemmer=stemmer), k=k)
         return results[0].tolist()
 
     return retrieve
@@ -145,6 +144,17 @@ class RetrieveToolError(Exception):
     pass
 
 
+def extract_retrieved_titles(content: str) -> list[str]:
+    return [title.strip() for title in re.findall(r"^# (.*)", content, re.MULTILINE)]
+
+
+def extract_all_retrieved_titles(trajectory: list[Message]) -> Generator[str, None, None]:
+    for msg in trajectory:
+        if msg["role"] != "tool":
+            continue
+        yield from extract_retrieved_titles(msg["content"])
+
+
 def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
@@ -175,14 +185,13 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
-    def retrieve(query: str, exclude_docs: list[str] = [], run_context: RunContext | None = None, **kwargs) -> str:
+    def retrieve(query: str, run_context: RunContext | None = None, **kwargs) -> str:
         """
-        Search for relevant documents by the query. The results become better if the query is more specific.
-        Args:
-            query: The query to search for.
-            exclude_docs: The list of document titles (without #) to exclude from the results. Defaults to empty list.
+        Retrieve for relevant documents by the query. The results become better if the query is more specific. It excludes documents that have already been retrieved.
         """
-        docs = [doc for doc in run_context["input"]["docs"] if doc["title"].strip() not in exclude_docs]
+        assert run_context is not None, "Run context is required"
+        already_retrieved_titles = set(extract_all_retrieved_titles(run_context["trajectory"]))
+        docs = [doc for doc in run_context["input"]["docs"] if doc["title"].strip() not in already_retrieved_titles]
         try:
             retrieved_docs = retriever(docs, query)
         except Exception as e:

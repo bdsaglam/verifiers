@@ -1,9 +1,9 @@
-import re
-from typing import Generator, List
+from typing import List
 
 from verifiers.metrics.musique import exact_match, f1
 from verifiers.models import Message
 from verifiers.rubrics.utils import get_last_answer
+from verifiers.tools.retrieve import extract_all_retrieved_titles
 
 
 def musique_em_reward_func(
@@ -27,17 +27,6 @@ def musique_f1_reward_func(
 ) -> List[float]:
     predicted_answers = [get_last_answer(c) or "" for c in completions]
     return [f1(predicted_answer, references) for predicted_answer, references in zip(predicted_answers, answers)]
-
-
-def extract_retrieved_titles(content: str) -> list[str]:
-    return [title.strip() for title in re.findall(r"^# (.*)", content, re.MULTILINE)]
-
-
-def extract_all_retrieved_titles(trajectory: list[Message]) -> Generator[str, None, None]:
-    for msg in trajectory:
-        if msg["role"] != "tool":
-            continue
-        yield from extract_retrieved_titles(msg["content"])
 
 
 def musique_supporting_recall_reward_func(

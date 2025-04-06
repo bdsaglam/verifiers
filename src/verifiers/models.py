@@ -14,6 +14,7 @@ class Input(TypedDict):
 
 class RunContext(TypedDict):
     input: Input
+    trajectory: list[Message]
 
 
 __all__ = [

@@ -146,12 +146,12 @@ class ToolEnv(MultiStepEnv):
             return f"Error: {str(e)}"
 
     def env_response(self, state: State, **kwargs: Any) -> Dict[str, str]:
-        run_context = dict(input=state["input"])
         messages = state["messages"]
         try:
             parsed = self.assistant_parser.parse(messages[-1]["content"])
             # Check if we got a valid tool field (not just None from failed parsing)
             if tool := getattr(parsed, "tool", None):
+                run_context = dict(input=state["input"], trajectory=messages)
                 result = self.call_tool(tool, run_context=run_context)
                 if len(result.strip()) > 0:
                     return {
