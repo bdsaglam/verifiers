@@ -155,7 +155,7 @@ def extract_all_retrieved_titles(trajectory: list[Message]) -> Generator[str, No
         yield from extract_retrieved_titles(msg["content"])
 
 
-def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
+def make_retrieve_tool(name: str = "lexical", top_k: int = 3, mode: str = "new") -> Callable:
     if name == "golden":
         retriever = golden_retriever
     elif name == "bm25":
@@ -190,8 +190,10 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
         Retrieve for relevant documents by the query. The results become better if the query is more specific. It excludes documents that have already been retrieved.
         """
         assert run_context is not None, "Run context is required"
-        already_retrieved_titles = set(extract_all_retrieved_titles(run_context["trajectory"]))
-        docs = [doc for doc in run_context["input"]["docs"] if doc["title"].strip() not in already_retrieved_titles]
+        docs = [doc for doc in run_context["input"]["docs"]]
+        if mode == "new":
+            already_retrieved_titles = set(extract_all_retrieved_titles(run_context["trajectory"]))
+            docs = [doc for doc in docs if doc["title"].strip() not in already_retrieved_titles]
         try:
             retrieved_docs = retriever(docs, query)
         except Exception as e:

@@ -13,6 +13,7 @@ stages:
       --dataset-split ${dataset.split}
       --retriever ${retriever.name}
       --retriever-top-k ${retriever.top_k}
+      --retriever-mode ${retriever.mode}
       --out data/generated/predictions.jsonl
     deps:
       - scripts/ragent.py
@@ -26,6 +27,7 @@ stages:
       - dataset.split
       - retriever
       - retriever.top_k
+      - retriever.mode
       - devices
     outs:
       - data/generated/predictions.jsonl
