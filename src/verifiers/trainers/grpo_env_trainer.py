@@ -40,6 +40,7 @@ class GRPOEnvTrainer(GRPOTrainer):
         callbacks: Optional[list[TrainerCallback]] = None,
         optimizers: tuple[Optional[torch.optim.Optimizer], Optional[torch.optim.lr_scheduler.LambdaLR]] = (None, None),
         peft_config: Optional["PeftConfig"] = None,
+        scale_rewards: bool = False,
         **kwargs,
     ):
         if not args.use_vllm:  # type: ignore
@@ -60,6 +61,7 @@ class GRPOEnvTrainer(GRPOTrainer):
             peft_config=peft_config,
             **kwargs,
         )
+        self.scale_rewards = scale_rewards
         self.env = env
 
     def _generate_and_score_completions(
@@ -174,8 +176,7 @@ class GRPOEnvTrainer(GRPOTrainer):
         mean_grouped_rewards = mean_grouped_rewards.repeat_interleave(self.num_generations, dim=0)  # type: ignore
         std_grouped_rewards = std_grouped_rewards.repeat_interleave(self.num_generations, dim=0)  # type: ignore
         advantages = rewards - mean_grouped_rewards
-        scale_rewards = False
-        if scale_rewards:
+        if self.scale_rewards:
             advantages = advantages / (std_grouped_rewards + 1e-4)
 
         # Slice to keep only the local part of the data

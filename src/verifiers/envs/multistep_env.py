@@ -136,18 +136,18 @@ class MultiStepEnv(Environment):
                 state["prompt_ids"] = llm_response.prompt_token_ids
             state["messages"].append({"role": "assistant", "content": llm_response.outputs[0].text})
 
-            # get token lengths of env response and new completion
+            # Update completion mask for env response
             total_prev_len = len(state["prompt_ids"]) + len(state["completion_ids"])
-            env_response_len = len(list(llm_response.prompt_token_ids)) - total_prev_len  # type: ignore
-            new_completion_len = len(llm_response.outputs[0].token_ids)
-
-            # update completion masks
+            env_response_len = len(list(llm_response.prompt_token_ids)) - total_prev_len
             state["completion_mask"].extend([self.env_mask] * env_response_len)
+
+            # Update completion mask for new completion
+            new_completion_len = len(llm_response.outputs[0].token_ids)
             state["completion_mask"].extend([1] * new_completion_len)
 
             # update completion ids
-            state["completion_ids"] = list(llm_response.prompt_token_ids) + list(llm_response.outputs[0].token_ids)
-            state["completion_ids"] = state["completion_ids"][len(state["prompt_ids"]) :]
+            all_ids = list(llm_response.prompt_token_ids) + list(llm_response.outputs[0].token_ids)
+            state["completion_ids"] = all_ids[len(state["prompt_ids"]) :]
 
             is_completed = (
                 self._is_reached_max_steps(state)
@@ -161,7 +161,6 @@ class MultiStepEnv(Environment):
                 state["completion_mask"] = state["completion_mask"][: sampling_params.max_tokens]
             else:
                 state["messages"].append(self.env_response(state))
-
 
             if len(state["completion_mask"]) != len(state["completion_ids"]):
                 # === Logging before assertion ===

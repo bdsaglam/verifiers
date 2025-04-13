@@ -116,6 +116,7 @@ def train(
     max_prompt_length: int = typer.Option(4096),
     max_completion_length: int = typer.Option(1024),
     num_generations: int = typer.Option(6),
+    scale_rewards: bool = typer.Option(False, help="Scale rewards"),
     batch_size: int = typer.Option(12),
     gradient_accumulation_steps: int = typer.Option(4),
     learning_rate: float = typer.Option(1e-5),
@@ -138,8 +139,6 @@ def train(
     train_dataset = train_dataset.map(
         lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < noise_rate]}
     )
-    # TODO: Remove this
-    # train_dataset = train_dataset.filter(lambda x: len(x["supporting_titles"]) > 2)
     log.info(f"Train dataset: {len(train_dataset)}")
 
     # Load model and tokenizer
@@ -177,7 +176,6 @@ def train(
         num_generations=num_generations,
         temperature=0.5,
         beta=0.04,
-        # scale_rewards=False,
         reward_weights=None,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
@@ -233,6 +231,7 @@ def train(
         peft_config=peft_config,
         env=vf_env,
         reward_funcs=reward_funcs,
+        scale_rewards=scale_rewards,
         args=training_args,
         train_dataset=vf_env.get_dataset(),
         eval_dataset=vf_env.get_eval_dataset(),
