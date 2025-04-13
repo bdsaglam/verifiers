@@ -65,11 +65,15 @@ def metric_max_over_ground_truths(
     return max(scores_for_ground_truths)
 
 
-def exact_match(prediction: str, reference: list[str]) -> float:
+def exact_match(prediction: str | None, reference: list[str]) -> float:
+    if prediction is None:
+        return 0.0
     return metric_max_over_ground_truths(compute_exact_match, prediction, reference)
 
 
-def f1(prediction: str, reference: list[str]) -> float:
+def f1(prediction: str | None, reference: list[str]) -> float:
+    if prediction is None:
+        return 0.0
     return metric_max_over_ground_truths(compute_f1, prediction, reference)
 
 

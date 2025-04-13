@@ -23,6 +23,7 @@ dependencies = [
     "typer",
     "vllm==0.7.0",
     "wandb",
+    "nltk",
 ]
 
 [dependency-groups]

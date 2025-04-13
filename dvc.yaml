@@ -7,11 +7,13 @@ stages:
       --model ${model.path}
       --temperature ${model.temperature}
       --top-p ${model.top_p}
+      --few-shot-prob ${model.few_shot_prob}
       --dataset-path ${dataset.path}
       --dataset-name ${dataset.name} 
       --dataset-split ${dataset.split}
       --retriever ${retriever.name}
       --retriever-top-k ${retriever.top_k}
+      --retriever-mode ${retriever.mode}
       --out data/generated/predictions.jsonl
     deps:
       - scripts/ragent.py
@@ -19,11 +21,13 @@ stages:
       - model.path
       - model.temperature
       - model.top_p
+      - model.few_shot_prob
       - dataset.path
       - dataset.name
       - dataset.split
       - retriever
       - retriever.top_k
+      - retriever.mode
       - devices
     outs:
       - data/generated/predictions.jsonl

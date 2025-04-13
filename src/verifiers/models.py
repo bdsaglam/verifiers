@@ -1,7 +1,6 @@
-from typing import Callable, TypedDict, Union
+from typing import Any, Callable, TypedDict
 
-from transformers import PreTrainedModel
-from trl.trainer.grpo_trainer import RewardFunc
+RewardFunc = Callable[[list, list], list[float]]
 
 
 class Message(TypedDict):
@@ -15,6 +14,7 @@ class Input(TypedDict):
 
 class RunContext(TypedDict):
     input: Input
+    trajectory: list[Message]
 
 
 __all__ = [

@@ -1,5 +1,6 @@
 import inspect
 import json
+import logging
 from textwrap import dedent
 from typing import Any, Callable, Dict, List
 
@@ -13,6 +14,8 @@ from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
 from verifiers.rubrics.reasoning import make_reasoning_reward_func
 from verifiers.rubrics.tool import make_tool_use_reward_func
+
+logger = logging.getLogger(__name__)
 
 
 class ToolEnv(MultiStepEnv):
@@ -146,12 +149,19 @@ class ToolEnv(MultiStepEnv):
             return f"Error: {str(e)}"
 
     def env_response(self, state: State, **kwargs: Any) -> Dict[str, str]:
-        run_context = dict(input=state["input"])
         messages = state["messages"]
         try:
             parsed = self.assistant_parser.parse(messages[-1]["content"])
+        except Exception:
+            logger.error(f"Error parsing tool response: {messages[-1]['content']}")
+            return {
+                "role": "user",
+                "content": "Error: Tool command not found or invalid format. Please ensure correct formatting.",
+            }
+        try:
             # Check if we got a valid tool field (not just None from failed parsing)
             if tool := getattr(parsed, "tool", None):
+                run_context = dict(input=state["input"], trajectory=messages)
                 result = self.call_tool(tool, run_context=run_context)
                 if len(result.strip()) > 0:
                     return {
@@ -164,10 +174,10 @@ class ToolEnv(MultiStepEnv):
                         "content": "Error: Tool execution returned empty output.",
                     }
         except Exception:
-            pass
+            logger.error(f"Error generating tool response: {messages[-1]['content']}")
         return {
             "role": "user",
-            "content": "Error: Tool command not found or invalid XML format. Please ensure correct formatting.",
+            "content": "Error: Tool call failed. Please ensure correct formatting.",
         }
 
 

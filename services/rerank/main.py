@@ -1,9 +1,10 @@
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol
 
 import bm25s
+import httpx
 import Stemmer
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -11,7 +12,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rerankers import Reranker
 from rerankers.documents import Document
-from rerankers.models.ranker import BaseRanker
 from rerankers.results import RankedResults, Result
 
 # Configure logging
@@ -22,10 +22,7 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 CACHE_DIR = "/tmp/.cache/flashrank"
 
-DEFAULT_MODEL = "flashrank/ms-marco-MiniLM-L-12-v2"
-
-# Initialize reranker models
-rerankers = {}
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "flashrank/ms-marco-MiniLM-L-12-v2")
 
 
 @asynccontextmanager
@@ -69,9 +66,7 @@ async def log_requests(request, call_next):
     """Middleware to log all incoming requests and their responses."""
     logger.info(f"Request: {request.method} {request.url.path}")
     response = await call_next(request)
-    logger.info(
-        f"Response: {request.method} {request.url.path} - Status: {response.status_code}"
-    )
+    logger.info(f"Response: {request.method} {request.url.path} - Status: {response.status_code}")
     return response
 
 
@@ -79,7 +74,11 @@ class RerankerNotFoundError(Exception):
     pass
 
 
-class BM25Ranker:
+class BaseRanker(Protocol):
+    async def rank_async(self, query: str, docs: List[str], **kwargs) -> RankedResults: ...
+
+
+class BM25Ranker(BaseRanker):
     def __init__(
         self,
         stemmer_lang: str | None = "en",
@@ -121,6 +120,67 @@ class BM25Ranker:
         return RankedResults(results=ranked_docs, query=query, has_scores=True)
 
 
+class TEIRanker(BaseRanker):
+    """Handles reranking using a TEI endpoint."""
+
+    def __init__(self, tei_url: str | None = None):
+        if tei_url is None:
+            tei_url = os.getenv("TEI_RERANK_URL")
+        if tei_url is None:
+            raise ValueError("TEI URL must be provided or set in the TEI_RERANK_URL environment variable")
+        self.tei_url = tei_url.rstrip("/")
+
+    async def rank_async(self, query: str, docs: List[str], **kwargs):
+        """Rank documents using the TEI /rerank endpoint."""
+        url = f"{self.tei_url}/rerank"
+
+        payload = {"query": query, "texts": docs, "raw_scores": False}
+        headers = {"Content-Type": "application/json"}
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(timeout=30.0)) as client:
+            try:
+                response = await client.post(url, json=payload, headers=headers)
+                response.raise_for_status()  # Raise exception for non-200 status codes
+            except httpx.RequestError as e:
+                logger.error(f"TEI request failed: {e}")
+                raise RuntimeError(f"Error communicating with TEI endpoint: {e}")
+            except httpx.HTTPStatusError as e:
+                logger.error(f"TEI request failed with status {e.response.status_code}: {e.response.text}")
+                raise RuntimeError(f"TEI endpoint returned error: {e.response.status_code} - {e.response.text}")
+
+        # Parse TEI list response (assuming TeiRerankItem structure like in verifier)
+        try:
+            # Minimal Pydantic-like validation for the expected structure
+            tei_response_data = response.json()
+            if not isinstance(tei_response_data, list):
+                raise ValueError("TEI response is not a list")
+            tei_results = []
+            for item in tei_response_data:
+                if not isinstance(item, dict) or "index" not in item or "score" not in item or "text" not in item:
+                    raise ValueError("Invalid item structure in TEI response")
+                tei_results.append(item)  # Keep as dict for simplicity here
+
+        except Exception as e:
+            logger.error(f"Failed to parse TEI response: {e}")
+            raise RuntimeError(f"Invalid response format from TEI endpoint: {e}")
+
+        # Adapt TEI response back to rerankers.results structure
+        ranked_docs = [
+            Result(
+                document=Document(doc_id=item["index"], text=item["text"]),
+                score=item["score"],
+            )
+            for item in tei_results
+        ]
+
+        # TEI already returns sorted results by score, descending
+        return RankedResults(results=ranked_docs, query=query, has_scores=True)
+
+
+# Initialize reranker models
+rerankers: dict[str, BaseRanker] = {}
+
+
 def get_reranker(model_id: str) -> BaseRanker:
     """Get or initialize a reranker model."""
     if model_id == "bm25":
@@ -129,14 +189,23 @@ def get_reranker(model_id: str) -> BaseRanker:
             try:
                 rerankers[model_id] = BM25Ranker()
                 if rerankers[model_id] is None:
-                    raise RerankerNotFoundError(
-                        "BM25 Reranker could not be initialized"
-                    )
+                    raise RerankerNotFoundError("BM25 Reranker could not be initialized")
             except Exception as e:
                 logger.error(f"Failed to load BM25 reranker: {e}")
-                raise RuntimeError(
-                    f"BM25 reranker could not be loaded: {str(e)}"
-                )
+                raise RuntimeError(f"BM25 reranker could not be loaded: {str(e)}")
+        return rerankers[model_id]
+
+    # Check for TEI models
+    if model_id.startswith("tei"):
+        if model_id not in rerankers:
+            logger.info(f"Initializing TEI reranker proxy for model: {model_id}")
+            try:
+                # We use the TEI URL, the specific model name after 'tei' isn't used by the TeiRanker itself
+                # but keeping it in the key `rerankers[model_id]` allows tracking specific TEI models if needed later.
+                rerankers[model_id] = TEIRanker()
+            except Exception as e:
+                logger.error(f"Failed to initialize TEI reranker proxy: {e}")
+                raise RuntimeError(f"TEI reranker proxy could not be initialized: {str(e)}")
         return rerankers[model_id]
 
     model_type, model_name = model_id.split("/", 1)
@@ -152,9 +221,7 @@ def get_reranker(model_id: str) -> BaseRanker:
                 raise RerankerNotFoundError("Reranker could not be initialized")
         except Exception as e:
             logger.error(f"Failed to load model {model_id}: {e}")
-            raise RuntimeError(
-                f"Model '{model_id}' could not be loaded: {str(e)}"
-            )
+            raise RuntimeError(f"Model '{model_id}' could not be loaded: {str(e)}")
     return rerankers[model_id]
 
 
@@ -196,9 +263,7 @@ async def rerank(request: RerankRequest) -> RerankResponse:
             response_result = RerankResult(
                 index=result.doc_id,
                 relevance_score=score,
-                document=None
-                if not request.return_documents
-                else request.documents[result.doc_id],
+                document=None if not request.return_documents else request.documents[result.doc_id],
             )
             rerank_results.append(response_result)
 
@@ -228,9 +293,10 @@ async def list_models():
             "models": [
                 "bm25",
                 "flashrank/ms-marco-MiniLM-L-12-v2",
-                "t5/unicamp-dl/mt5-base-mmarco-v2"
-                "cross-encoder/mixedbread-ai/mxbai-rerank-base-v1"
+                "t5/unicamp-dl/mt5-base-mmarco-v2",
+                "cross-encoder/mixedbread-ai/mxbai-rerank-base-v1",
                 "colbert/colbert-ir/colbertv2.0",
+                "tei",
             ]
         }
     except Exception as e:
