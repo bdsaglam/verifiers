@@ -171,7 +171,7 @@ def train(
         warmup_steps=10,
         adam_beta1=0.9,
         adam_beta2=0.99,
-        max_grad_norm=0.01,
+        max_grad_norm=0.1,
         num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         num_generations=num_generations,
         temperature=0.5,
