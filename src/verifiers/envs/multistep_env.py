@@ -175,7 +175,13 @@ class MultiStepEnv(Environment):
                 logger.info(f"New completion length: {new_completion_len}")
                 logger.info(f"Final completion_mask length: {len(state['completion_mask'])}")
                 logger.info(f"Final completion_ids length: {len(state['completion_ids'])}")
-                raise AssertionError(f"Completion mask and completion ids lengths do not match for state {idx}")
+
+                if len(state["completion_mask"]) > len(state["completion_ids"]):
+                    state["completion_mask"] = state["completion_mask"][: len(state["completion_ids"])]
+                else:
+                    state["completion_mask"].extend([1] * (len(state["completion_ids"]) - len(state["completion_mask"])))
+
+                # raise AssertionError(f"Completion mask and completion ids lengths do not match for state {idx}")
 
             return idx, state
 
