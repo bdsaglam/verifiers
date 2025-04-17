@@ -107,9 +107,9 @@ def get_model_name(model_path: str) -> str:
 def train(
     model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
     datasets_str: str = typer.Option("bdsaglam/musique,answerable,train", "--datasets"),
-    noise_rate: float = typer.Option(0.2, help="Noise rate to use"),
-    retriever: str = typer.Option("bm25", help="Retriever to use"),
-    retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
+    noise_rate: float = typer.Option(1.0, help="Noise rate to use"),
+    retriever: str = typer.Option("hybrid", help="Retriever to use"),
+    retriever_top_k: int = typer.Option(1, help="Number of retriever results to use"),
     retriever_mode: str = typer.Option("new", help="Retriever mode"),
     few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
