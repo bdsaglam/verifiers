@@ -45,5 +45,6 @@ def natural_language_reward_func(
         assistant_messages = [msg for msg in trajectory if msg["role"] == "assistant"]
         thinking_traces = [getattr(parser.parse(msg["content"]), tag, None) for msg in assistant_messages]
         thinking = "\n".join([t for t in thinking_traces if t is not None])
-        rewards.append(rate_text_for_language_use(thinking))
+        reward = rate_text_for_language_use(thinking) * 0.2
+        rewards.append(reward)
     return rewards
