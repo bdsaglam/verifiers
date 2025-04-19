@@ -103,8 +103,8 @@ accelerate launch \
     --model 'meta-llama/Llama-3.1-8B-Instruct' \
     --few-shot-prob 0.5 \
     --n-env-jobs 32 \
-    --batch-size 32 \
-    --num-generations 16 \
+    --batch-size 24 \
+    --num-generations 12 \
     --gradient-accumulation-steps 8 \
     --lora-r 32 \
     --lora-alpha 64 \
