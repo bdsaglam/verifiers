@@ -12,7 +12,7 @@ accelerate launch \
     --batch-size 6 \
     --num-generations 6 \
     --gradient-accumulation-steps 16 \
-    2>&1 | tee tmp/debug-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 
 
 accelerate launch \
@@ -30,7 +30,7 @@ accelerate launch \
     --num-generations 6 \
     --gradient-accumulation-steps 8 \
     --resume-from-checkpoint \
-    2>&1 | tee tmp/debug-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 
 
 ```sh
@@ -70,7 +70,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 
 python scripts/ragent2.py train \
     --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
-    2>&1 | tee tmp/debug.log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 
 ```
 
@@ -90,7 +90,7 @@ accelerate launch \
     --batch-size 32 \
     --num-generations 8 \
     --gradient-accumulation-steps 2 \
-    2>&1 | tee tmp/debug-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 
 # 2025-04-17
 
@@ -108,4 +108,4 @@ accelerate launch \
     --gradient-accumulation-steps 8 \
     --lora-r 32 \
     --lora-alpha 64 \
-    2>&1 | tee tmp/debug-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log

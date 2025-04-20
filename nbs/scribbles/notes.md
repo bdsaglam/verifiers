@@ -17,7 +17,7 @@ accelerate launch \
     --config-file configs/zero3.yaml \
     --num-processes 2 \
     scripts/ragent.py train \
-    2>&1 | tee tmp/ragent-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 ```
 
 ```sh
@@ -32,7 +32,7 @@ accelerate launch \
     --retriever 'hybrid' \
     --retriever-top-k 1 \
     --n-env-jobs 1 \
-    2>&1 | tee tmp/ragent-llama3-8b-round-2-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 ```
 
 ### Publish manually
@@ -57,7 +57,7 @@ accelerate launch \
     --retriever-top-k 1 \
     --n-env-jobs 16 \
     --resume-from-checkpoint \
-    2>&1 | tee tmp/ragent-llama3-8b-round-2-$(date +%s).log
+    2>&1 | tee tmp/logs/train-$(date +%s).log
 
 ```
 
