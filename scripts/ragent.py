@@ -185,7 +185,7 @@ def train(
         gradient_accumulation_steps=gradient_accumulation_steps,
         gradient_checkpointing=True,
         use_vllm=True,
-        vllm_gpu_memory_utilization=0.7,
+        vllm_gpu_memory_utilization=0.5,
         save_strategy="steps",
         save_steps=100,
         save_only_model=False,
