@@ -22,7 +22,7 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 CACHE_DIR = "/tmp/.cache/flashrank"
 
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "flashrank/ms-marco-MiniLM-L-12-v2")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "tei")
 
 
 @asynccontextmanager

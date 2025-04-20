@@ -174,6 +174,20 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3, mode: str = "new")
             lexical_retriever,
             top_k=top_k,
         )
+    elif name == "hybrid-tei":
+        semantic_retriever = make_rerank_retriever(
+            model="tei",
+            top_k=top_k * 2,
+        )
+        lexical_retriever = make_rerank_retriever(
+            model="bm25",
+            top_k=top_k * 2,
+        )
+        retriever = make_combined_retriever(
+            semantic_retriever,
+            lexical_retriever,
+            top_k=top_k,
+        )
     elif name == "lexical":
         retriever = make_rerank_retriever(top_k=top_k, model="bm25")
     elif name.startswith("semantic"):
