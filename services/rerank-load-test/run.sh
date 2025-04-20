@@ -9,7 +9,7 @@
 # --only-summary: Only show the summary stats
 locust -f locustfile.py \
     -H http://localhost:8931 \
-    -u 10 \
+    -u 32 \
     -r 1 \
     -t 1m \
     --headless \
