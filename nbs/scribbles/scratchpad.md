@@ -81,9 +81,9 @@ accelerate launch \
     --num-processes 3 \
     scripts/ragent.py train \
     --datasets 'bdsaglam/musique,answerable,train' \
-    --noise-rate 1.0 \
     --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
     --few-shot-prob 0.0 \
+    --temperature 0.5 \
     --retriever 'hybrid' \
     --retriever-top-k 1 \
     --n-env-jobs 32 \
@@ -108,4 +108,23 @@ accelerate launch \
     --gradient-accumulation-steps 8 \
     --lora-r 32 \
     --lora-alpha 64 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+# 2025-04-20
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique-mini,answerable,train' \
+    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid' \
+    --retriever-top-k 1 \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 2 \
     2>&1 | tee tmp/logs/train-$(date +%s).log

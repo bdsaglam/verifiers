@@ -23,7 +23,6 @@ from verifiers.rubrics.language import natural_language_reward_func
 from verifiers.rubrics.musique import (
     musique_em_reward_func,
     musique_f1_reward_func,
-    musique_supporting_f1_reward_func,
     musique_supporting_recall_reward_func,
 )
 from verifiers.tools import make_retrieve_tool
@@ -116,10 +115,12 @@ def train(
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
     max_completion_length: int = typer.Option(1024),
-    num_generations: int = typer.Option(6),
+    temperature: float = typer.Option(0.5),
+    num_generations: int = typer.Option(8),
     scale_rewards: bool = typer.Option(False, help="Scale rewards"),
-    batch_size: int = typer.Option(12),
-    gradient_accumulation_steps: int = typer.Option(4),
+    kl_beta: float = typer.Option(0.04),
+    batch_size: int = typer.Option(32),
+    gradient_accumulation_steps: int = typer.Option(2),
     learning_rate: float = typer.Option(1e-5),
     peft: bool = typer.Option(True),
     lora_r: int = typer.Option(32, help="LORA rank"),
@@ -175,8 +176,8 @@ def train(
         max_grad_norm=0.1,
         num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         num_generations=num_generations,
-        temperature=0.5,
-        beta=0.04,
+        temperature=temperature,
+        beta=kl_beta,
         reward_weights=None,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,

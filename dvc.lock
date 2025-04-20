@@ -2,15 +2,15 @@ schema: '2.0'
 stages:
   predict:
     cmd: CUDA_VISIBLE_DEVICES=0 python scripts/ragent.py predict --n-env-jobs 32 --batch-size
-      32 --model /home/baris/repos/verifiers/outputs/Llama-3.1-8B-Instruct-ragent-2
-      --temperature 0.5 --top-p 0.95 --few-shot-prob 0.0 --dataset-path bdsaglam/musique-mini
-      --dataset-name answerable  --dataset-split validation --retriever hybrid --retriever-top-k
+      32 --model bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged --temperature
+      0.5 --top-p 0.95 --few-shot-prob 0.0 --dataset-path bdsaglam/musique-mini --dataset-name
+      answerable  --dataset-split validation --retriever hybrid --retriever-top-k
       1 --retriever-mode new --out data/generated/predictions.jsonl
     deps:
     - path: scripts/ragent.py
       hash: md5
-      md5: 2b8bb7b02c7e7b3ab08340994a12ac93
-      size: 12130
+      md5: 5f32376795de8e08d9e9f524c71bd3f1
+      size: 12177
     params:
       params.yaml:
         dataset.name: answerable
@@ -30,16 +30,16 @@ stages:
     outs:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: 22478f460c6132b4dcc579b9bfc192b8
-      size: 5511152
+      md5: e4d53dd202a25d2503cab753f250e8e5
+      size: 5409804
   evaluate:
     cmd: python scripts/evaluate.py data/generated/predictions.jsonl --output-dir
       data/generated/
     deps:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: 22478f460c6132b4dcc579b9bfc192b8
-      size: 5511152
+      md5: e4d53dd202a25d2503cab753f250e8e5
+      size: 5409804
     - path: scripts/evaluate.py
       hash: md5
       md5: 796221d2d92add59161c311790d7d792
@@ -47,9 +47,9 @@ stages:
     outs:
     - path: data/generated/results.jsonl
       hash: md5
-      md5: 597c4aeadabb2066960b5c053014b0ea
-      size: 143082
+      md5: 46e970de3caa98abb54814fb906efe85
+      size: 126618
     - path: data/generated/scores.json
       hash: md5
-      md5: fa7f44706f8aa721e5f8c969895c0248
-      size: 180
+      md5: 0e5c0d266fdb27f35617c36dc9251010
+      size: 195
