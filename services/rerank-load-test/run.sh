@@ -8,7 +8,7 @@
 # --headless: Run without web UI
 # --only-summary: Only show the summary stats
 locust -f locustfile.py \
-    -H http://localhost:8003 \
+    -H http://localhost:8931 \
     -u 10 \
     -r 1 \
     -t 1m \
