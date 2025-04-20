@@ -31,7 +31,7 @@ def make_reasoning_reward_func(
                     elif len(result) > max_char_length:
                         trajectory_rewards.append(0.1)
                     else:
-                        trajectory_rewards.append(0.2)
+                        trajectory_rewards.append(0.4)
                 else:
                     trajectory_rewards.append(0.0)
 
