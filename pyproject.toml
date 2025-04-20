@@ -26,16 +26,7 @@ dependencies = [
     "nltk",
 ]
 
-[dependency-groups]
-dev = [
-    "jupyter>=1.1.1",
-    "matplotlib",
-    "seaborn",
-    "pandas",
-    "tabulate",
-    "dvc",
-    "dvc-s3",
-]
+[project.optional-dependencies]
 retrieve = [
     "bm25s",
     "PyStemmer",
@@ -52,4 +43,15 @@ codex = [
     "numpy",
     "scipy",
     "sympy",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "matplotlib",
+    "seaborn",
+    "pandas",
+    "tabulate",
+    "dvc",
+    "dvc-s3",
 ]
