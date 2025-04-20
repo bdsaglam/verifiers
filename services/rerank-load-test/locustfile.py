@@ -1,7 +1,7 @@
 import logging
 import random
 
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 from locust import HttpUser, between, events, task
 
 from verifiers.datasets.musique import preprocess_dataset
@@ -33,10 +33,10 @@ class RerankUser(HttpUser):
         payload = {
             "query": query,
             "documents": docs,
-            "top_n": 2,
+            "top_n": 1,
             "return_documents": False,
             # "model": "bm25",
-            "model": "flashrank/ms-marco-MiniLM-L-12-v2",
+            "model": "tei",
         }
 
         with self.client.post(
