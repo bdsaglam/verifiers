@@ -156,7 +156,7 @@ class TEIRanker(BaseRanker):
                 raise ValueError("TEI response is not a list")
             tei_results = []
             for item in tei_response_data:
-                if not isinstance(item, dict) or "index" not in item or "score" not in item or "text" not in item:
+                if not isinstance(item, dict) or "index" not in item or "score" not in item:
                     raise ValueError("Invalid item structure in TEI response")
                 tei_results.append(item)  # Keep as dict for simplicity here
 
@@ -167,7 +167,7 @@ class TEIRanker(BaseRanker):
         # Adapt TEI response back to rerankers.results structure
         ranked_docs = [
             Result(
-                document=Document(doc_id=item["index"], text=item["text"]),
+                document=Document(doc_id=item["index"], text=docs[item["index"]]),
                 score=item["score"],
             )
             for item in tei_results

@@ -9,6 +9,10 @@ pip install -r requirements.txt
 export LD_LIBRARY_PATH=/home/baris/miniconda3/envs/verifiers/lib/python3.11/site-packages/nvidia/nvjitlink/lib:$LD_LIBRARY_PATH
 ```
 
+```sh
+docker-compose down --remove-orphans; docker-compose up --build
+```
+
 ## Train
 
 ```sh
