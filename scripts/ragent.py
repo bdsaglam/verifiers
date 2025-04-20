@@ -24,6 +24,7 @@ from verifiers.rubrics.musique import (
     musique_em_reward_func,
     musique_f1_reward_func,
     musique_supporting_f1_reward_func,
+    musique_supporting_recall_reward_func,
 )
 from verifiers.tools import make_retrieve_tool
 from verifiers.trainers.grpo_env_trainer import GRPOEnvTrainer
@@ -221,7 +222,7 @@ def train(
     reward_funcs = [
         musique_em_reward_func,
         musique_f1_reward_func,
-        musique_supporting_f1_reward_func,
+        musique_supporting_recall_reward_func,
         natural_language_reward_func,
         *vf_env.get_reward_funcs(),
     ]
