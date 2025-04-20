@@ -35,8 +35,8 @@ services:
       start_period: 30s
   
   rerank:
-    # depends_on:
-    #   - tei-reranker
+    depends_on:
+      - tei-reranker
     build:
       context: ./services/rerank/
       dockerfile: Dockerfile
