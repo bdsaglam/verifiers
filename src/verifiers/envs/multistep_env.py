@@ -7,9 +7,8 @@ from joblib import Parallel, delayed
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.envs.environment import Environment
+from verifiers.imports import LLM, CompletionOutput, RequestOutput, SamplingParams
 from verifiers.models import Input, Message
-
-from ..imports import LLM, CompletionOutput, SamplingParams  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +127,7 @@ class MultiStepEnv(Environment):
 
         # Generate LLM responses for incomplete states
         messages_to_step = [states[idx]["messages"] for idx in live_indices]
-        llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False)
+        llm_responses = self.act(llm, messages_to_step, sampling_params)
 
         # Define the processing function with all the state processing logic
         def process_one_state(idx, state, llm_response):
@@ -179,7 +178,9 @@ class MultiStepEnv(Environment):
                 if len(state["completion_mask"]) > len(state["completion_ids"]):
                     state["completion_mask"] = state["completion_mask"][: len(state["completion_ids"])]
                 else:
-                    state["completion_mask"].extend([1] * (len(state["completion_ids"]) - len(state["completion_mask"])))
+                    state["completion_mask"].extend(
+                        [1] * (len(state["completion_ids"]) - len(state["completion_mask"]))
+                    )
 
                 # raise AssertionError(f"Completion mask and completion ids lengths do not match for state {idx}")
 
@@ -208,3 +209,11 @@ class MultiStepEnv(Environment):
         n_prompt_messages = state["n_prompt_messages"]
         step_count = (len(messages) - n_prompt_messages) // 2
         return step_count >= self.max_steps
+
+    def act(
+        self,
+        llm: LLM,
+        messages_list: List[List[Message]],
+        sampling_params: SamplingParams,
+    ) -> List[RequestOutput]:
+        return llm.chat(messages_list, sampling_params=sampling_params, use_tqdm=False)

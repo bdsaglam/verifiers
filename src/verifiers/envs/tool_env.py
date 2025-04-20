@@ -8,7 +8,9 @@ from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
 
 from verifiers.datasets.utils import prepare_dataset_for_env
-from verifiers.envs.multistep_env import CompletionOutput, MultiStepEnv, State
+from verifiers.envs.multistep_env import MultiStepEnv, State
+from verifiers.imports import LLM, CompletionOutput, RequestOutput, SamplingParams
+from verifiers.models import Message
 from verifiers.parsers import XMLParser
 from verifiers.prompts import DEFAULT_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics.format import make_format_reward_func, make_xml_reward_func
@@ -179,6 +181,23 @@ class ToolEnv(MultiStepEnv):
             "role": "user",
             "content": "Error: Tool call failed. Please ensure correct formatting.",
         }
+
+    def act(
+        self,
+        llm: LLM,
+        messages_list: List[List[Message]],
+        sampling_params: SamplingParams,
+    ) -> List[RequestOutput]:
+        for messages in messages_list:
+            messages.append({"role": "assistant", "content": "<think>\n"})
+        continue_final_message = True
+        return llm.chat(
+            messages_list,
+            sampling_params=sampling_params,
+            continue_final_message=continue_final_message,
+            add_generation_prompt=not continue_final_message,
+            use_tqdm=False,
+        )
 
 
 def infer_schema_from_function(func: Callable) -> Dict[str, Any]:

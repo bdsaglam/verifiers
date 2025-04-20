@@ -80,16 +80,16 @@ accelerate launch \
     --config-file configs/zero3.yaml \
     --num-processes 3 \
     scripts/ragent.py train \
-    --datasets 'bdsaglam/musique,answerable,train' \
+    --datasets 'bdsaglam/musique-mini,answerable,train' \
     --noise-rate 1.0 \
     --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
     --few-shot-prob 0.0 \
     --retriever 'hybrid' \
     --retriever-top-k 1 \
-    --n-env-jobs 32 \
-    --batch-size 32 \
-    --num-generations 8 \
-    --gradient-accumulation-steps 2 \
+    --n-env-jobs 24 \
+    --batch-size 24 \
+    --num-generations 12 \
+    --gradient-accumulation-steps 8 \
     2>&1 | tee tmp/debug-$(date +%s).log
 
 # 2025-04-17
