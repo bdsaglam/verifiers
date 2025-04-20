@@ -24,6 +24,15 @@ CACHE_DIR = "/tmp/.cache/flashrank"
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "tei")
 
+MODEL_CONFIGS = {
+    "bm25": {"warmup": False},
+    "flashrank/ms-marco-MiniLM-L-12-v2": {"warmup": True},
+    "t5/unicamp-dl/mt5-base-mmarco-v2": {"warmup": True},
+    "cross-encoder/mixedbread-ai/mxbai-rerank-base-v1": {"warmup": True},
+    "colbert/colbert-ir/colbertv2.0": {"warmup": True},
+    "tei": {"warmup": False},
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,13 +41,14 @@ async def lifespan(app: FastAPI):
     try:
         reranker = get_reranker(DEFAULT_MODEL)
         logger.info(f"Successfully loaded default model: {DEFAULT_MODEL}")
-        _ = await reranker.rank_async(
-            query="What is the capital of France?",
-            docs=[
-                "Paris is the capital of France.",
-                "Paris is the capital of France.",
-            ],
-        )
+        if MODEL_CONFIGS[DEFAULT_MODEL]["warmup"]:
+            _ = await reranker.rank_async(
+                query="What is the capital of France?",
+                docs=[
+                    "Paris is the capital of France.",
+                    "Paris is the capital of France.",
+                ],
+            )
     except Exception as e:
         logger.error(f"Failed to load default model at startup: {e}")
     yield
@@ -290,14 +300,7 @@ async def list_models():
     """List available models endpoint."""
     try:
         return {
-            "models": [
-                "bm25",
-                "flashrank/ms-marco-MiniLM-L-12-v2",
-                "t5/unicamp-dl/mt5-base-mmarco-v2",
-                "cross-encoder/mixedbread-ai/mxbai-rerank-base-v1",
-                "colbert/colbert-ir/colbertv2.0",
-                "tei",
-            ]
+            "models": sorted(list(MODEL_CONFIGS.keys())),
         }
     except Exception as e:
         logger.error(f"Error listing models: {e}")
