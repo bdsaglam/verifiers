@@ -32,9 +32,10 @@ For each step:
 For instance,
 <tool>
 {
-  "name": "retrieve",
+  "name": "tool_name",
   "args": {
-    "query": "..."
+    "arg1": "...",
+    "arg2": "..."
   }
 }
 </tool>
@@ -50,20 +51,28 @@ Tools expect specific JSON input formats. Do not make up tools or arguments that
 
 
 QA_TOOL_PROMPT_TEMPLATE = """\
-Answer the question based on the information provided by tools. You have access to the following tools:
-
-{tool_descriptions}
-
 For each step:
 1. Think through your reasoning inside <think> tags
 2. If needed, use a tool by writing a JSON command inside <tool> tags with:
    - "name": the tool to use
-   - "args": the keyword arguments for the tool.
+   - "args": the arguments for the tool
+For instance,
+<tool>
+{
+  "name": "retrieve",
+  "args": {
+    "query": "..."
+  }
+}
+</tool>
 3. You will see the tool's output inside <result> tags
-4. Continue until you can give the final answer (in a few words) inside <answer> tags.
+4. Continue until you can give the final answer
+5. At the end, reflect on your previous steps inside <think> tag and give your final answer inside <answer> tag
 
-Tools expect specific JSON input formats. Follow the examples carefully.
-Do not make up tools or arguments that aren't listed.
+You have access to the following tools to help solve problems:
+{tool_descriptions}
 
-If the answer is not in the provided documents, try different queries with the retrieve tool.
+- Tools expect specific JSON input formats. 
+- Do not make up tools or arguments that aren't listed.
+- If the answer is not in the provided documents, try different arguments with the tools.
 """
