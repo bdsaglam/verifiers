@@ -113,13 +113,13 @@ accelerate launch \
 
 # 2025-04-20
 
-export CUDA_VISIBLE_DEVICES=0,1,2
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 accelerate launch \
     --config-file configs/zero3.yaml \
-    --num-processes 2 \
+    --num-processes 3 \
     scripts/ragent.py train \
-    --datasets 'bdsaglam/musique-mini,answerable,train' \
+    --datasets 'bdsaglam/musique,answerable,train' \
     --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
     --few-shot-prob 0.0 \
     --temperature 0.5 \
@@ -128,6 +128,18 @@ accelerate launch \
     --n-env-jobs 24 \
     --batch-size 24 \
     --num-generations 8 \
-    --gradient-accumulation-steps 8 \
-    --n-epochs 2 \
+    --gradient-accumulation-steps 4 \
+    --n-epochs 4 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+python scripts/merge.py \
+    outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged-ragent-grpo-20250421_000014/checkpoint-400 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-20250421_000014-400
+
+python scripts/merge.py \
+    outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged-ragent-grpo-20250421_000014/checkpoint-1600 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-20250421_000014-1600
+
+python scripts/merge.py \
+    outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged-ragent-grpo-20250421_000014/checkpoint-1900 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-20250421_000014-1900
