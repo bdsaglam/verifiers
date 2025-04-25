@@ -143,3 +143,22 @@ python scripts/merge.py \
 python scripts/merge.py \
     outputs/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged-ragent-grpo-20250421_000014/checkpoint-1900 \
     --out outputs/Llama-3.1-8B-Instruct-ragent-20250421_000014-1900
+
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'Qwen/Qwen2.5-14B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 16 \
+    --batch-size 16 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 8 \
+    --n-epochs 2 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
