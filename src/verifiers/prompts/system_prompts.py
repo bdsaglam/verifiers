@@ -61,12 +61,12 @@ For each step:
    - "args": the arguments for the tool
 For instance,
 <tool>
-\{
+{{
   "name": "retrieve",
-  "args": \{
+  "args": {{
     "query": "..."
-  \}
-\}
+  }}
+}}
 </tool>
 3. You will see the tool's output inside <result> tags
 4. Continue until you have found the answer
