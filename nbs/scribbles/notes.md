@@ -16,6 +16,10 @@ docker-compose down --remove-orphans; docker-compose up --build
 ## Train
 
 ```sh
+huggingface-cli download Qwen/Qwen2.5-14B-Instruct --repo-type model
+```
+
+```sh
 export CUDA_VISIBLE_DEVICES=0,1,2
 accelerate launch \
     --config-file configs/zero3.yaml \
