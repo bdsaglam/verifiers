@@ -39,13 +39,13 @@ For instance,
 }
 </tool>
 3. You will see the tool's output inside <result> tags
-4. Continue until you can give the final answer inside <answer> tags
-5. Always verify your previous steps in a <think> tag before giving your final answer
+4. Continue until you can give the final answer
+5. At the end, reflect on your previous steps inside <think> tag and give your final answer inside <answer> tag
 
-Tools expect specific JSON input formats. You have access to the following tools to help solve problems:
+You have access to the following tools to help solve problems:
 {tool_descriptions}
 
-Do not make up tools or arguments that aren't listed.
+Tools expect specific JSON input formats. Do not make up tools or arguments that aren't listed.
 """
 
 
