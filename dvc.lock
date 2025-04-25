@@ -5,12 +5,12 @@ stages:
       32 --model bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged --temperature
       0.5 --top-p 0.95 --few-shot-prob 0.0 --dataset-path bdsaglam/musique-mini --dataset-name
       answerable  --dataset-split validation --retriever hybrid-tei --retriever-top-k
-      1 --retriever-mode new --out data/generated/predictions.jsonl
+      1 --retriever-mode all --out data/generated/predictions.jsonl
     deps:
     - path: scripts/ragent.py
       hash: md5
-      md5: 2d6042aba9f88835e87143c81db8221f
-      size: 12320
+      md5: 0ae7ec5a0f4228513ab52cc867e9e3df
+      size: 12497
     params:
       params.yaml:
         dataset.name: answerable
@@ -24,22 +24,22 @@ stages:
         retriever:
           name: hybrid-tei
           top_k: 1
-          mode: new
-        retriever.mode: new
+          mode: all
+        retriever.mode: all
         retriever.top_k: 1
     outs:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: 9c0e12b46938c882b058556d5a2a52ac
-      size: 5441829
+      md5: 7534d4f6ff804c1679b0d283a9ad5a53
+      size: 5641645
   evaluate:
     cmd: python scripts/evaluate.py data/generated/predictions.jsonl --output-dir
       data/generated/
     deps:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: 9c0e12b46938c882b058556d5a2a52ac
-      size: 5441829
+      md5: 7534d4f6ff804c1679b0d283a9ad5a53
+      size: 5641645
     - path: scripts/evaluate.py
       hash: md5
       md5: 796221d2d92add59161c311790d7d792
@@ -47,9 +47,9 @@ stages:
     outs:
     - path: data/generated/results.jsonl
       hash: md5
-      md5: e81cffacbd9bd0189ffa64d1a01f9326
-      size: 126015
+      md5: d495637559d46d4e14afafd889616f96
+      size: 128940
     - path: data/generated/scores.json
       hash: md5
-      md5: 815e0886f2ceca5aeaac6b5577214787
-      size: 197
+      md5: 089fd3551904873464e4bcdb31eda6e7
+      size: 181
