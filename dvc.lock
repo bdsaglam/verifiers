@@ -4,13 +4,13 @@ stages:
     cmd: CUDA_VISIBLE_DEVICES=0 python scripts/ragent.py predict --n-env-jobs 32 --batch-size
       32 --model bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged --temperature
       0.5 --top-p 0.95 --few-shot-prob 0.0 --dataset-path bdsaglam/musique-mini --dataset-name
-      answerable  --dataset-split validation --retriever hybrid --retriever-top-k
+      answerable  --dataset-split validation --retriever hybrid-tei --retriever-top-k
       1 --retriever-mode new --out data/generated/predictions.jsonl
     deps:
     - path: scripts/ragent.py
       hash: md5
-      md5: 5f32376795de8e08d9e9f524c71bd3f1
-      size: 12177
+      md5: 2d6042aba9f88835e87143c81db8221f
+      size: 12320
     params:
       params.yaml:
         dataset.name: answerable
@@ -22,7 +22,7 @@ stages:
         model.temperature: 0.5
         model.top_p: 0.95
         retriever:
-          name: hybrid
+          name: hybrid-tei
           top_k: 1
           mode: new
         retriever.mode: new
@@ -30,16 +30,16 @@ stages:
     outs:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: e4d53dd202a25d2503cab753f250e8e5
-      size: 5409804
+      md5: 9c0e12b46938c882b058556d5a2a52ac
+      size: 5441829
   evaluate:
     cmd: python scripts/evaluate.py data/generated/predictions.jsonl --output-dir
       data/generated/
     deps:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: e4d53dd202a25d2503cab753f250e8e5
-      size: 5409804
+      md5: 9c0e12b46938c882b058556d5a2a52ac
+      size: 5441829
     - path: scripts/evaluate.py
       hash: md5
       md5: 796221d2d92add59161c311790d7d792
@@ -47,9 +47,9 @@ stages:
     outs:
     - path: data/generated/results.jsonl
       hash: md5
-      md5: 46e970de3caa98abb54814fb906efe85
-      size: 126618
+      md5: e81cffacbd9bd0189ffa64d1a01f9326
+      size: 126015
     - path: data/generated/scores.json
       hash: md5
-      md5: 0e5c0d266fdb27f35617c36dc9251010
-      size: 195
+      md5: 815e0886f2ceca5aeaac6b5577214787
+      size: 197
