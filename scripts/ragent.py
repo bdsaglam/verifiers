@@ -107,6 +107,7 @@ def get_model_name(model_path: str) -> str:
 def train(
     model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
     datasets_str: str = typer.Option("bdsaglam/musique,answerable,train", "--datasets"),
+    dataset_sort_col: str = typer.Option("UNSET", help="Dataset sort column"),
     noise_rate: float = typer.Option(1.0, help="Noise rate to use"),
     retriever: str = typer.Option("hybrid", help="Retriever to use"),
     retriever_top_k: int = typer.Option(1, help="Number of retriever results to use"),
@@ -141,6 +142,8 @@ def train(
     train_dataset = train_dataset.map(
         lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < noise_rate]}
     )
+    if dataset_sort_col != "UNSET":
+        train_dataset = train_dataset.sort(dataset_sort_col)
     log.info(f"Train dataset: {len(train_dataset)}")
 
     # Load model and tokenizer
