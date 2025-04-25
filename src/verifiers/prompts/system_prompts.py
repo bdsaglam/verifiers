@@ -58,12 +58,21 @@ For each step:
 1. Think through your reasoning inside <think> tags
 2. If needed, use a tool by writing a JSON command inside <tool> tags with:
    - "name": the tool to use
-   - "args": the keyword arguments for the tool.
+   - "args": the arguments for the tool
+For instance,
+<tool>
+\{
+  "name": "retrieve",
+  "args": \{
+    "query": "..."
+  \}
+\}
+</tool>
 3. You will see the tool's output inside <result> tags
-4. Continue until you can give the final answer (in a few words) inside <answer> tags.
+4. Continue until you can give the final answer
+5. At the end, reflect on your previous steps inside <think> tag and give your final answer inside <answer> tag
 
-Tools expect specific JSON input formats. Follow the examples carefully.
-Do not make up tools or arguments that aren't listed.
-
-If the answer is not in the provided documents, try different queries with the retrieve tool.
+- Tools expect specific JSON input formats. Follow the examples carefully.  
+- Do not make up tools or arguments that aren't listed.
+- If the answer is not in the provided documents, try different queries with the retrieve tool.
 """
