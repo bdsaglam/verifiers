@@ -69,10 +69,12 @@ For instance,
 \}
 </tool>
 3. You will see the tool's output inside <result> tags
-4. Continue until you can give the final answer
-5. At the end, reflect on your previous steps inside <think> tag and give your final answer inside <answer> tag
+4. Continue until you have found the answer
+5. In the last step, 
+  - Reflect on your previous steps inside <think> tags
+  - Give your final answer inside <answer> tags
 
-- Tools expect specific JSON input formats. Follow the examples carefully.  
-- Do not make up tools or arguments that aren't listed.
-- If the answer is not in the provided documents, try different queries with the retrieve tool.
+- Tools expect specific JSON input formats.
+- Do not make up tools or arguments that aren't listed in the tool descriptions.
+- If the answer is not in the provided documents, keep trying different queries with the retrieve tool.
 """
