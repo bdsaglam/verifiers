@@ -321,9 +321,10 @@ def predict(
         model=model_path,
         trust_remote_code=True,
         dtype=get_half_precision_dtype(),
-        gpu_memory_utilization=0.80,
+        gpu_memory_utilization=0.90,
         tensor_parallel_size=os.getenv("CUDA_VISIBLE_DEVICES", "0").count(",") + 1,
         seed=seed,
+        max_model_len=8192*2,
     )
 
     # Set up sampling parameters
