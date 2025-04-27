@@ -162,3 +162,24 @@ accelerate launch \
     --gradient-accumulation-steps 8 \
     --n-epochs 2 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+
+## 2025-04-27
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'meta-llama/Llama-3.1-8B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 4 \
+    --n-epochs 4 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log

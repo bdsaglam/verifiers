@@ -9,7 +9,7 @@ from verifiers.tools.retrieve import extract_all_retrieved_titles
 def musique_em_reward_func(
     completions: List[List[Message]],
     answers: list[list[str]],
-    supporting_titles: list[list[str]],
+    n_hops: list[int],
     **kwargs,
 ) -> List[float]:
     """
@@ -17,21 +17,21 @@ def musique_em_reward_func(
     """
     predicted_answers = [get_last_answer(c) or "" for c in completions]
     return [
-        exact_match(predicted_answer, references) * len(supporting_titles) / 2
-        for predicted_answer, references, supporting_titles in zip(predicted_answers, answers, supporting_titles)
+        exact_match(predicted_answer, references) * _n_hops / 2
+        for predicted_answer, references, _n_hops in zip(predicted_answers, answers, n_hops)
     ]
 
 
 def musique_f1_reward_func(
     completions: List[List[Message]],
     answers: list[list[str]],
-    supporting_titles: list[list[str]],
+    n_hops: list[int],
     **kwargs,
 ) -> List[float]:
     predicted_answers = [get_last_answer(c) or "" for c in completions]
     return [
-        f1(predicted_answer, references) * len(supporting_titles) / 2
-        for predicted_answer, references, supporting_titles in zip(predicted_answers, answers, supporting_titles)
+        f1(predicted_answer, references) * _n_hops / 2
+        for predicted_answer, references, _n_hops in zip(predicted_answers, answers, n_hops)
     ]
 
 

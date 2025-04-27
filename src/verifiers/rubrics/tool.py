@@ -46,7 +46,7 @@ def make_tool_use_reward_func(
             # Calculate reward
             if tool_attempts == 0:
                 return 0.0
-            return 0.2 * (successful_executions / tool_attempts)
+            return 0.5 * (successful_executions / tool_attempts)
 
         return [check_execution(c) for c in completions]
 

@@ -112,7 +112,7 @@ def train(
     retriever: str = typer.Option("hybrid", help="Retriever to use"),
     retriever_top_k: int = typer.Option(1, help="Number of retriever results to use"),
     retriever_mode: str = typer.Option("all", help="Retriever mode"),
-    few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
+    few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
     max_completion_length: int = typer.Option(1024),
