@@ -76,5 +76,5 @@ For instance,
 
 - Tools expect specific JSON input formats.
 - Do not make up tools or arguments that aren't listed in the tool descriptions.
-- If the answer is not in the provided documents, keep trying different queries with the retrieve tool.
+- If your initial search doesn't yield the answer, try different queries. Your answer must be based solely on retrieved documents. Continue searching until you find the relevant information.
 """

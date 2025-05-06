@@ -7,7 +7,7 @@ import typer
 
 from verifiers.metrics.musique import exact_match, f1
 from verifiers.rubrics.utils import get_last_answer
-from verifiers.tools.retrieve import extract_all_retrieved_titles
+from verifiers.tools.retrieve import extract_all_retrieved_doc_ids
 
 
 def calculate_supporting_metrics(retrieved: Set[str], supporting: Set[str]) -> Dict[str, float]:
@@ -45,25 +45,22 @@ def process_row(row: pd.Series) -> Dict[str, Any]:
     """
     # Extract data
     predicted_answer = get_last_answer(row["trajectory"])
-    supporting_titles = set(row["supporting_titles"])
-    retrieved_titles = set(extract_all_retrieved_titles(row["trajectory"]))
+    supporting_doc_ids = set(doc["idx"] for doc in row["docs"] if doc["is_supporting"])
+    retrieved_doc_ids = set(extract_all_retrieved_doc_ids(row["trajectory"]))
 
     # Calculate answer metrics
     answer_exact_match = exact_match(predicted_answer, row["answers"])
     answer_f1 = f1(predicted_answer, row["answers"])
 
     # Calculate supporting metrics
-    supporting_metrics = calculate_supporting_metrics(retrieved_titles, supporting_titles)
-
-    # Compute n_hops
-    n_hops = len(supporting_titles)
+    supporting_metrics = calculate_supporting_metrics(retrieved_doc_ids, supporting_doc_ids)
 
     return {
         "predicted_answer": predicted_answer,
-        "retrieved_titles": list(retrieved_titles),
-        "n_hops": n_hops,
         "exact_match": answer_exact_match,
         "f1": answer_f1,
+        "supporting_doc_ids": list(supporting_doc_ids),
+        "retrieved_doc_ids": list(retrieved_doc_ids),
         "supporting.precision": supporting_metrics["precision"],
         "supporting.recall": supporting_metrics["recall"],
         "supporting.f1": supporting_metrics["f1"],
@@ -85,20 +82,21 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
 
     # Process all metrics in a single pass
     metrics_df = pd.DataFrame(df.apply(process_row, axis=1).tolist())
-    result_df = pd.concat([df[["id", "answers", "supporting_titles"]], metrics_df], axis=1)
+    result_df = pd.concat([df[["id", "n_hops", "answers", "supporting_doc_slugs"]], metrics_df], axis=1)
 
     # Select columns for output
     columns = [
         "id",
         "n_hops",
+        "docs",
         # QA
         "answers",
         "predicted_answer",
         "exact_match",
         "f1",
         # Retrieval
-        "supporting_titles",
-        "retrieved_titles",
+        "supporting_doc_ids",
+        "retrieved_doc_ids",
         "supporting.precision",
         "supporting.recall",
         "supporting.f1",

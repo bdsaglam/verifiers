@@ -3,7 +3,7 @@ from typing import List
 from verifiers.metrics.musique import exact_match, f1
 from verifiers.models import Message
 from verifiers.rubrics.utils import get_last_answer
-from verifiers.tools.retrieve import extract_all_retrieved_titles
+from verifiers.tools.retrieve import extract_all_retrieved_doc_ids
 
 
 def musique_em_reward_func(
@@ -37,33 +37,35 @@ def musique_f1_reward_func(
 
 def musique_supporting_recall_reward_func(
     completions: List[List[Message]],
-    supporting_titles: list[list[str]],
+    docs: list[list[dict]],
     **kwargs,
 ) -> List[float]:
     rewards = []
-    for completion, _supporting_titles in zip(completions, supporting_titles):
-        retrieved_titles = set(extract_all_retrieved_titles(completion))
-        if len(retrieved_titles) == 0:
+    for completion, _docs in zip(completions, docs):
+        doc_ids = [doc["id"] for doc in _docs]
+        retrieved_doc_ids = set(extract_all_retrieved_doc_ids(completion))
+        if len(retrieved_doc_ids) == 0:
             rewards.append(0.0)
             continue
-        recall = len(retrieved_titles & set(_supporting_titles)) / len(_supporting_titles)
+        recall = len(retrieved_doc_ids & set(doc_ids)) / len(doc_ids)
         rewards.append(recall)
     return rewards
 
 
 def musique_supporting_f1_reward_func(
     completions: List[List[Message]],
-    supporting_titles: list[list[str]],
+    docs: list[list[dict]],
     **kwargs,
 ) -> List[float]:
     rewards = []
-    for completion, _supporting_titles in zip(completions, supporting_titles):
-        retrieved_titles = set(extract_all_retrieved_titles(completion))
-        if len(retrieved_titles) == 0:
+    for completion, _docs in zip(completions, docs):
+        doc_ids = [doc["id"] for doc in _docs]
+        retrieved_doc_ids = set(extract_all_retrieved_doc_ids(completion))
+        if len(retrieved_doc_ids) == 0:
             rewards.append(0.0)
             continue
-        precision = len(retrieved_titles & set(_supporting_titles)) / len(retrieved_titles)
-        recall = len(retrieved_titles & set(_supporting_titles)) / len(_supporting_titles)
+        precision = len(retrieved_doc_ids & set(doc_ids)) / len(retrieved_doc_ids)
+        recall = len(retrieved_doc_ids & set(doc_ids)) / len(doc_ids)
         f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
         rewards.append(f1)
     return rewards

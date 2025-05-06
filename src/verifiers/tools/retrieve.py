@@ -144,18 +144,22 @@ class RetrieveToolError(Exception):
     pass
 
 
-def extract_retrieved_titles(content: str) -> list[str]:
-    return [title.strip() for title in re.findall(r"^# (.*)", content, re.MULTILINE)]
+def extract_retrieved_doc_ids(content: str) -> list[str]:
+    return [id.strip() for id in re.findall(r"^Document ID: (\d+)", content, re.MULTILINE)]
 
 
-def extract_all_retrieved_titles(trajectory: list[Message]) -> Generator[str, None, None]:
+def extract_all_retrieved_doc_ids(trajectory: list[Message]) -> Generator[str, None, None]:
     for msg in trajectory:
         if msg["role"] != "tool":
             continue
-        yield from extract_retrieved_titles(msg["content"])
+        yield from extract_retrieved_doc_ids(msg["content"])
 
 
-def make_retrieve_tool(name: str = "lexical", top_k: int = 3, mode: str = "new") -> Callable:
+def format_doc(doc: dict) -> str:
+    return f"Document ID: {doc['id']}\n{doc['text']}"
+
+
+def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
     elif name == "bm25":
@@ -205,13 +209,10 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3, mode: str = "new")
         """
         assert run_context is not None, "Run context is required"
         docs = [doc for doc in run_context["input"]["docs"]]
-        if mode == "new":
-            already_retrieved_titles = set(extract_all_retrieved_titles(run_context["trajectory"]))
-            docs = [doc for doc in docs if doc["title"].strip() not in already_retrieved_titles]
         try:
             retrieved_docs = retriever(docs, query)
         except Exception as e:
             raise RetrieveToolError(f"Error retrieving documents: {e}")
-        return "\n\n".join([x["text"] for x in retrieved_docs])
+        return "\n\n".join([format_doc(x) for x in retrieved_docs])
 
     return retrieve

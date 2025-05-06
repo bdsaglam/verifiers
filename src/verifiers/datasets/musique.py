@@ -3,8 +3,9 @@ from datasets import Dataset
 
 def _make_doc(p: dict) -> dict:
     return {
-        "id": p["idx"],
+        "id": str(p["idx"]),
         "text": f"# {p['title']}\n{p['paragraph_text']}",
+        "body": p["paragraph_text"],
         "title": p["title"],
         "is_supporting": p["is_supporting"],
     }
@@ -39,20 +40,29 @@ def preprocess_answer(answer: str) -> str:
 def preprocess_example(x: dict) -> dict:
     answers = [x["answer"], *x["answer_aliases"]]
     answers += [preprocess_answer(a) for a in answers]
-    supporting_titles = [p["title"] for p in x["paragraphs"] if p["is_supporting"]]
+    supporting_doc_slugs = [f"{p['idx']}: {p['title']}" for p in x["paragraphs"] if p["is_supporting"]]
     return {
         "prompt": [{"role": "user", "content": x["question"]}],
         "docs": [_make_doc(p) for p in x["paragraphs"]],
         "answer": x["answer"],
         "answers": list(set(answers)),
-        "supporting_titles": supporting_titles,
-        "n_hops": len(supporting_titles),
+        "supporting_doc_slugs": supporting_doc_slugs,
+        "n_hops": len(supporting_doc_slugs),
     }
 
 
 def preprocess_dataset(dataset: Dataset) -> Dataset:
     columns_to_remove = list(
-        set(dataset.column_names) - {"id", "prompt", "docs", "answer", "answers", "supporting_titles", "n_hops"}
+        set(dataset.column_names)
+        - {
+            "id",
+            "prompt",
+            "docs",
+            "answer",
+            "answers",
+            "supporting_doc_slugs",
+            "n_hops",
+        }
     )
-    dataset = dataset.map(preprocess_example, remove_columns=columns_to_remove)
+    dataset = dataset.map(preprocess_example).remove_columns(columns_to_remove)
     return dataset
