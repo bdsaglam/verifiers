@@ -12,7 +12,6 @@ model:
 retriever:
   name: hybrid-tei
   top_k: 1
-  mode: 'all'
 
 run: 1
 devices: '0'

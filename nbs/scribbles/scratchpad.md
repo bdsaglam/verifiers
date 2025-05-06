@@ -322,8 +322,8 @@ accelerate launch \
     --n-env-jobs 32 \
     --batch-size 32 \
     --num-generations 8 \
-    --gradient-accumulation-steps 4 \
-    --n-epochs 4 \
+    --gradient-accumulation-steps 2 \
+    --n-epochs 2 \
     --lora-r 128 \
     --lora-alpha 256 \
     2>&1 | tee tmp/logs/train-$(date +%s).log

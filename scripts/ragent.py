@@ -63,7 +63,6 @@ def create_environment(
     n_jobs: int = 1,
     top_k: int = 2,
     few_shot_prob: float = 1.0,
-    retriever_mode: str = "all",
 ):
     """
     Create and initialize the appropriate environment based on the specified type.
@@ -83,7 +82,7 @@ def create_environment(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        tools=[make_retrieve_tool(name=retriever, top_k=top_k, mode=retriever_mode)],
+        tools=[make_retrieve_tool(name=retriever, top_k=top_k)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         few_shot=RETRIEVE_FEW_SHOT[0],
         few_shot_prob=few_shot_prob,
@@ -110,7 +109,6 @@ def train(
     noise_rate: float = typer.Option(1.0, help="Noise rate to use"),
     retriever: str = typer.Option("hybrid", help="Retriever to use"),
     retriever_top_k: int = typer.Option(1, help="Number of retriever results to use"),
-    retriever_mode: str = typer.Option("all", help="Retriever mode"),
     few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
@@ -154,7 +152,6 @@ def train(
         n_jobs=n_env_jobs,
         top_k=retriever_top_k,
         few_shot_prob=few_shot_prob,
-        retriever_mode=retriever_mode,
     )
 
     # Use provided suffix or default based on env_type
@@ -281,8 +278,7 @@ def predict(
     dataset_split: str = typer.Option("train"),
     retriever: str = typer.Option("bm25", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
-    retriever_mode: str = typer.Option("all", help="Retriever mode"),
-    few_shot_prob: float = typer.Option(1.0, help="Probability of using few-shot examples"),
+    few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     batch_size: int = typer.Option(16, "--batch-size", "-bs"),
     max_completion_length: int = typer.Option(1024, "-cl", "--max-completion-length"),
@@ -309,7 +305,6 @@ def predict(
         n_jobs=n_env_jobs,
         retriever=retriever,
         top_k=retriever_top_k,
-        retriever_mode=retriever_mode,
         few_shot_prob=few_shot_prob,
     )
 
