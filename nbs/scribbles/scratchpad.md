@@ -324,7 +324,7 @@ accelerate launch \
     --num-generations 8 \
     --gradient-accumulation-steps 2 \
     --n-epochs 2 \
-    --lora-r 128 \
+    --lora-r 256 \
     --lora-alpha 256 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
