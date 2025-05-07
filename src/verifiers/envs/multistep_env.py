@@ -29,7 +29,7 @@ class MultiStepEnv(Environment):
         self,
         sampling_args: Dict[str, Any] = {},
         mask_env_response: bool = True,
-        max_steps: int = 10,
+        max_steps: int = 100,
         n_jobs: int = 1,  # 1 means no parallelization, -1 means use all processors
         **kwargs,
     ):

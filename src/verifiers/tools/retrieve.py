@@ -2,10 +2,14 @@ import re
 from collections import defaultdict
 from typing import Any, Callable, Generator
 
-from verifiers.models import Message, RunContext
+from verifiers.models import Message, RunContext, Document
 
 
-def golden_retriever(docs: list[dict], query: str) -> list[dict]:
+def format_doc(doc: Document) -> str:
+    return f"Document ID: {doc['id']}\n{doc['text']}"
+
+
+def golden_retriever(docs: list[Document], query: str) -> list[Document]:
     return [doc for doc in docs if doc["is_supporting"]]
 
 
@@ -28,7 +32,7 @@ def make_bm25_retriever(
     if stemmer_lang:
         stemmer = Stemmer.Stemmer(stemmer_lang)
 
-    def retrieve(docs: list[dict], query: str) -> list[dict]:
+    def retrieve(docs: list[Document], query: str) -> list[Document]:
         """BM25 retriever implementation.
 
         Args:
@@ -67,7 +71,7 @@ def make_rerank_retriever(
     if model is not None:
         kwargs["model"] = model
 
-    def retrieve(docs: list[dict], query: str) -> list[dict]:
+    def retrieve(docs: list[Document], query: str) -> list[Document]:
         texts = [doc["text"] for doc in docs]
         ranking = rerank_client.rerank(query=query, documents=texts, **kwargs)
         return [docs[result.index] for result in ranking.results]
@@ -123,7 +127,7 @@ def make_combined_retriever(
         A function that retrieves documents by combining results from all retrievers.
     """
 
-    def retrieve(docs: list[dict], query: str) -> list[dict]:
+    def retrieve(docs: list[Document], query: str) -> list[Document]:
         """Combined retriever implementation.
 
         Args:
@@ -155,11 +159,7 @@ def extract_all_retrieved_doc_ids(trajectory: list[Message]) -> Generator[str, N
         yield from extract_retrieved_doc_ids(msg["content"])
 
 
-def format_doc(doc: dict) -> str:
-    return f"Document ID: {doc['id']}\n{doc['text']}"
-
-
-def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
+def make_search_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
     elif name == "bm25":
@@ -203,7 +203,7 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
-    def retrieve(query: str, run_context: RunContext | None = None, **kwargs) -> str:
+    def search(query: str, run_context: RunContext | None = None, **kwargs) -> str:
         """
         Retrieve for relevant documents by the query. The results become better if the query is more specific. It excludes documents that have already been retrieved.
         """
@@ -215,4 +215,29 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
             raise RetrieveToolError(f"Error retrieving documents: {e}")
         return "\n\n".join([format_doc(x) for x in retrieved_docs])
 
-    return retrieve
+    return search
+
+
+def make_list_tool() -> Callable:
+    def list_docs(run_context: RunContext | None = None, **kwargs) -> str:
+        """
+        List all documents (id and title) available for this question.
+        """
+        assert run_context is not None, "Run context is required"
+        return "\n".join([f"{doc['id']}. {doc['title']}" for doc in run_context["input"]["docs"]])
+
+    return list_docs
+
+
+def make_get_tool() -> Callable:
+    def get_doc(id: str, run_context: RunContext | None = None, **kwargs) -> str:
+        """
+        Get the document by the id.
+        """
+        assert run_context is not None, "Run context is required"
+        for doc in run_context["input"]["docs"]:
+            if doc["id"] == str(id):
+                return format_doc(doc)
+        raise ValueError(f"Document with id {id} not found")
+
+    return get_doc

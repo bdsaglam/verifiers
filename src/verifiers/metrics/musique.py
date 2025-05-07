@@ -1,10 +1,7 @@
 import collections
 import re
 import string
-from typing import Callable, Dict, List
-
-from verifiers.models import Message
-from verifiers.rubrics.utils import get_last_answer
+from typing import Callable
 
 
 def normalize_answer(s: str) -> str:
@@ -77,7 +74,7 @@ def f1(prediction: str | None, reference: list[str]) -> float:
     return metric_max_over_ground_truths(compute_f1, prediction, reference)
 
 
-def compute_metrics(prediction: str, reference: list[str]) -> Dict[str, float]:
+def compute_metrics(prediction: str, reference: list[str]) -> dict[str, float]:
     return {
         "exact_match": exact_match(prediction, reference),
         "f1": f1(prediction, reference),
