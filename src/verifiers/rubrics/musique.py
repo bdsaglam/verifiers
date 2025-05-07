@@ -40,14 +40,15 @@ def musique_supporting_recall_reward_func(
     docs: list[list[dict]],
     **kwargs,
 ) -> List[float]:
+    print(docs)
     rewards = []
     for completion, _docs in zip(completions, docs):
-        doc_ids = [doc["id"] for doc in _docs]
+        supporting_doc_ids = [doc["id"] for doc in _docs if doc["is_supporting"]]
         retrieved_doc_ids = set(extract_all_retrieved_doc_ids(completion))
         if len(retrieved_doc_ids) == 0:
             rewards.append(0.0)
             continue
-        recall = len(retrieved_doc_ids & set(doc_ids)) / len(doc_ids)
+        recall = len(retrieved_doc_ids & set(supporting_doc_ids)) / len(supporting_doc_ids)
         rewards.append(recall)
     return rewards
 
@@ -59,13 +60,13 @@ def musique_supporting_f1_reward_func(
 ) -> List[float]:
     rewards = []
     for completion, _docs in zip(completions, docs):
-        doc_ids = [doc["id"] for doc in _docs]
+        supporting_doc_ids = [doc["id"] for doc in _docs if doc["is_supporting"]]
         retrieved_doc_ids = set(extract_all_retrieved_doc_ids(completion))
         if len(retrieved_doc_ids) == 0:
             rewards.append(0.0)
             continue
-        precision = len(retrieved_doc_ids & set(doc_ids)) / len(retrieved_doc_ids)
-        recall = len(retrieved_doc_ids & set(doc_ids)) / len(doc_ids)
+        precision = len(retrieved_doc_ids & set(supporting_doc_ids)) / len(retrieved_doc_ids)
+        recall = len(retrieved_doc_ids & set(supporting_doc_ids)) / len(supporting_doc_ids)
         f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
         rewards.append(f1)
     return rewards
