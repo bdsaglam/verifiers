@@ -349,3 +349,25 @@ accelerate launch \
     --lora-r 128 \
     --lora-alpha 256 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+## 2025-05-08
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'meta-llama/Llama-3.1-8B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 2 \
+    --n-epochs 2 \
+    --lora-r 256 \
+    --lora-alpha 256 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
