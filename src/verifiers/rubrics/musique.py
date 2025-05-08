@@ -40,7 +40,6 @@ def musique_supporting_recall_reward_func(
     docs: list[list[dict]],
     **kwargs,
 ) -> List[float]:
-    print(docs)
     rewards = []
     for completion, _docs in zip(completions, docs):
         supporting_doc_ids = [doc["id"] for doc in _docs if doc["is_supporting"]]
