@@ -71,8 +71,9 @@ For instance,
 </tool>
 3. You will see the tool's output inside <result> tags
 4. Continue until you have found the answer
-5. In the last step, 
+5. In the **last** step, 
   - Reflect on your previous steps inside <think> tags
+  - Cite the documents you used to answer the question inside <cite> tags by their IDs, e.g. `<cite>1, 2, 3</cite>`. This will be used to determine whether you back your answer with the information provided by the tools.
   - Give your final answer inside <answer> tags
 
 - Tools expect specific JSON input formats.

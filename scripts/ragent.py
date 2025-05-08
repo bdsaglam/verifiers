@@ -19,6 +19,7 @@ import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
+from verifiers.rubrics.citation import make_citation_reward_func
 from verifiers.rubrics.language import natural_language_reward_func
 from verifiers.rubrics.musique import (
     musique_em_reward_func,
@@ -222,6 +223,7 @@ def train(
         musique_em_reward_func,
         musique_f1_reward_func,
         musique_supporting_recall_reward_func,
+        make_citation_reward_func(cite_tag="cite"),
         natural_language_reward_func,
         *vf_env.get_reward_funcs(),
     ]
