@@ -17,7 +17,7 @@ services:
       - "8930:80"
     volumes:
       - ~/.cache/tei:/data
-    command: ["--model-id", "BAAI/bge-reranker-large"]
+    command: ["--model-id", "BAAI/bge-reranker-v2-m3"]
     restart: unless-stopped
     deploy:
       resources:
