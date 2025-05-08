@@ -243,4 +243,4 @@ def format_tool_descriptions(schemas: List[Dict[str, Any]]) -> str:
 
         descriptions.append("\n".join(desc))
 
-    return "\n\n".join(descriptions)
+    return "\n----\n".join(descriptions)

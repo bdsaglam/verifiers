@@ -51,8 +51,9 @@ Tools expect specific JSON input formats. Do not make up tools or arguments that
 
 QA_TOOL_PROMPT_TEMPLATE = """\
 Answer the question based on the information provided by tools. You have access to the following tools:
-
+====
 {tool_descriptions}
+====
 
 For each step:
 1. Think through your reasoning inside <think> tags
