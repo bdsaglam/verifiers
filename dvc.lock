@@ -1,22 +1,22 @@
 schema: '2.0'
 stages:
   predict:
-    cmd: CUDA_VISIBLE_DEVICES=0 python scripts/ragent.py predict --n-env-jobs 32 --batch-size
+    cmd: CUDA_VISIBLE_DEVICES=1 python scripts/ragent.py predict --n-env-jobs 32 --batch-size
       32 --model bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged --temperature
       0.5 --top-p 0.95 --few-shot-prob 0.0 --dataset-path bdsaglam/musique-mini --dataset-name
       answerable  --dataset-split validation --retriever hybrid-tei --retriever-top-k
-      1 --retriever-mode all --out data/generated/predictions.jsonl
+      1 --out data/generated/predictions.jsonl
     deps:
     - path: scripts/ragent.py
       hash: md5
-      md5: 0ae7ec5a0f4228513ab52cc867e9e3df
-      size: 12497
+      md5: 0459cd5c6a9e48ac69f27dd94bc4606d
+      size: 12262
     params:
       params.yaml:
         dataset.name: answerable
         dataset.path: bdsaglam/musique-mini
         dataset.split: validation
-        devices: '0'
+        devices: '1'
         model.few_shot_prob: 0.0
         model.path: bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged
         model.temperature: 0.5
@@ -24,32 +24,30 @@ stages:
         retriever:
           name: hybrid-tei
           top_k: 1
-          mode: all
-        retriever.mode: all
         retriever.top_k: 1
     outs:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: 7534d4f6ff804c1679b0d283a9ad5a53
-      size: 5641645
+      md5: 444f4fb719f3eae32ab2af59babd4ba1
+      size: 9322017
   evaluate:
     cmd: python scripts/evaluate.py data/generated/predictions.jsonl --output-dir
       data/generated/
     deps:
     - path: data/generated/predictions.jsonl
       hash: md5
-      md5: 7534d4f6ff804c1679b0d283a9ad5a53
-      size: 5641645
+      md5: 444f4fb719f3eae32ab2af59babd4ba1
+      size: 9322017
     - path: scripts/evaluate.py
       hash: md5
-      md5: 796221d2d92add59161c311790d7d792
-      size: 3792
+      md5: e3684a0ac027bdbdd52040ec271406e0
+      size: 3819
     outs:
     - path: data/generated/results.jsonl
       hash: md5
-      md5: d495637559d46d4e14afafd889616f96
-      size: 128940
+      md5: 34f5565e9c0c949ff9904a66cbaf0e85
+      size: 103439
     - path: data/generated/scores.json
       hash: md5
-      md5: 089fd3551904873464e4bcdb31eda6e7
+      md5: 088252283415aecce066a11e4d6b9d22
       size: 181

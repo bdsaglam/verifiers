@@ -393,3 +393,8 @@ accelerate launch \
     --lora-alpha 256 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
+```sh
+python scripts/merge.py \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged
+```

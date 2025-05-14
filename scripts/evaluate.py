@@ -45,7 +45,7 @@ def process_row(row: pd.Series) -> Dict[str, Any]:
     """
     # Extract data
     predicted_answer = get_last_answer(row["trajectory"])
-    supporting_doc_ids = set(doc["idx"] for doc in row["docs"] if doc["is_supporting"])
+    supporting_doc_ids = set(doc["id"] for doc in row["docs"] if doc["is_supporting"])
     retrieved_doc_ids = set(extract_all_retrieved_doc_ids(row["trajectory"]))
 
     # Calculate answer metrics
@@ -88,7 +88,6 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
     columns = [
         "id",
         "n_hops",
-        "docs",
         # QA
         "answers",
         "predicted_answer",

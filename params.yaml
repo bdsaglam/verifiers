@@ -14,4 +14,4 @@ retriever:
   top_k: 1
 
 run: 1
-devices: '0'
+devices: '1'
