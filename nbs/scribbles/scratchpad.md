@@ -454,10 +454,10 @@ python scripts/merge.py \
 
 accelerate launch \
     --config-file configs/zero3.yaml \
-    --num-processes 2 \
+    --num-processes 3 \
     scripts/ragent.py train \
     --datasets 'bdsaglam/musique,answerable,train' \
-    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged' \
+    --model 'meta-llama/Llama-3.1-8B-Instruct' \
     --few-shot-prob 0.0 \
     --temperature 0.5 \
     --retriever 'hybrid-tei' \
@@ -467,7 +467,24 @@ accelerate launch \
     --num-generations 8 \
     --gradient-accumulation-steps 8 \
     --n-epochs 3 \
-    --lora-r 512 \
-    --lora-alpha 512 \
+    --lora-r 256 \
+    --lora-alpha 256 \
     --kl-beta 0.01 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+## Test set predictions
+
+CUDA_VISIBLE_DEVICES=2 python scripts/ragent.py predict \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --model '/home/baris/repos/verifiers/outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged' \
+    --temperature 0.5 \
+    --top-p 0.95 \
+    --few-shot-prob 0.0 \
+    --dataset-path 'bdsaglam/musique-ans-test' \
+    --dataset-name 'answerable' \
+    --dataset-split 'test' \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --out tmp/musique-test/predictions.jsonl

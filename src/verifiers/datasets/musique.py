@@ -8,7 +8,7 @@ def _make_doc(p: dict) -> Document:
         "id": str(p["idx"]),
         "title": p["title"],
         "body": p["paragraph_text"],
-        "is_supporting": p["is_supporting"],
+        "is_supporting": p.get("is_supporting", False),
         "text": f"# {p['title']}\n{p['paragraph_text']}",
     }
 
