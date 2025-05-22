@@ -378,8 +378,8 @@ accelerate launch \
     scripts/ragent.py train \
     --datasets 'bdsaglam/musique,answerable,train' \
     --model 'meta-llama/Llama-3.1-8B-Instruct' \
-    --run-name 'Llama-3.1-8B-Instruct-ragent-grpo-20250508_095113' \
-    --resume-from-checkpoint \
+    --run-name 'Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215' \
+    --resume-from-checkpoint outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215/checkpoint-1600 \
     --few-shot-prob 0.0 \
     --temperature 0.5 \
     --retriever 'hybrid-tei' \
@@ -393,8 +393,53 @@ accelerate launch \
     --lora-alpha 256 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
-```sh
 python scripts/merge.py \
     ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215 \
     --out outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged
-```
+
+huggingface-cli upload --repo-type model \
+    Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged
+
+
+
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 4 \
+    --n-epochs 1 \
+    --lora-r 256 \
+    --lora-alpha 256 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 2 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 18 \
+    --batch-size 18 \
+    --num-generations 6 \
+    --gradient-accumulation-steps 8 \
+    --n-epochs 1 \
+    --lora-r 256 \
+    --lora-alpha 256 \
+    --kl-beta 0.01 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log

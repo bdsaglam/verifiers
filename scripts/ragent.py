@@ -118,6 +118,7 @@ def train(
     temperature: float = typer.Option(0.5),
     num_generations: int = typer.Option(8),
     scale_rewards: bool = typer.Option(False, help="Scale rewards"),
+    kl_beta: float = typer.Option(0.04, help="KL beta"),
     batch_size: int = typer.Option(32),
     gradient_accumulation_steps: int = typer.Option(2),
     learning_rate: float = typer.Option(5e-6),
@@ -129,7 +130,7 @@ def train(
     push_to_hub: bool = typer.Option(True, help="Push to hub"),
     out: Path = typer.Option("./outputs/"),
     run_name: str | None = None,
-    resume_from_checkpoint: bool = typer.Option(False, help="Resume training from a checkpoint"),
+    resume_from_checkpoint: str | None = typer.Option(None, help="Resume training from a checkpoint"),
 ):
     """Train a model using GRPO for code generation or tool use."""
 
@@ -176,7 +177,7 @@ def train(
         num_iterations=2,  # steps per global batch (1 on-policy, 1 off-policy)
         num_generations=num_generations,
         temperature=temperature,
-        beta=0.04,
+        beta=kl_beta,
         reward_weights=None,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
@@ -275,10 +276,10 @@ def train(
 
 @app.command("predict")
 def predict(
-    model_path: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--model"),
-    dataset_path: str = typer.Option("bdsaglam/musique"),
+    model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
+    dataset_path: str = typer.Option("bdsaglam/musique-mini"),
     dataset_name: str = typer.Option("answerable"),
-    dataset_split: str = typer.Option("train"),
+    dataset_split: str = typer.Option("validation"),
     retriever: str = typer.Option("bm25", help="Retriever to use"),
     retriever_top_k: int = typer.Option(2, help="Number of retriever results to use"),
     few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
