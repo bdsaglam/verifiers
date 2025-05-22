@@ -443,3 +443,31 @@ accelerate launch \
     --lora-alpha 256 \
     --kl-beta 0.01 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+python scripts/merge.py \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged
+
+
+## 2025-05-22
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 2 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 8 \
+    --n-epochs 3 \
+    --lora-r 512 \
+    --lora-alpha 512 \
+    --kl-beta 0.01 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
