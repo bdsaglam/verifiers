@@ -288,6 +288,7 @@ def predict(
     max_completion_length: int = typer.Option(1024, "-cl", "--max-completion-length"),
     temperature: float = typer.Option(0.5),
     top_p: float = typer.Option(0.95),
+    repeat: int = typer.Option(1, help="Number of times to repeat the generation"),
     out: Path = typer.Option("./outputs/predictions.jsonl"),
     seed: int = 89,
 ):
@@ -336,7 +337,7 @@ def predict(
     )
 
     # Process dataset in batches with progress bar
-    ds = vf_env.get_dataset()
+    ds = vf_env.get_dataset().repeat(repeat)
     records = []
     for i in tqdm(range(0, len(ds), batch_size), desc="Processing batches", total=len(ds) // batch_size):
         inputs = ds.select(range(i, min(i + batch_size, len(ds))))

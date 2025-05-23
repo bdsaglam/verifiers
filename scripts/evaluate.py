@@ -1,16 +1,37 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any
 
 import pandas as pd
 import typer
 
 from verifiers.metrics.musique import exact_match, f1
+from verifiers.models import Message
+from verifiers.rubrics.citation import make_citation_extractor
 from verifiers.rubrics.utils import get_last_answer
 from verifiers.tools.retrieve import extract_all_retrieved_doc_ids
 
+citation_extractor = make_citation_extractor()
 
-def calculate_supporting_metrics(retrieved: Set[str], supporting: Set[str]) -> Dict[str, float]:
+
+def calculate_citation_metrics(trajectory: list[Message], docs: list[dict]) -> dict[str, float]:
+    """Calculate citation metrics."""
+    cited_doc_ids = citation_extractor(trajectory)
+    if not cited_doc_ids:
+        return {"precision": 0.0, "recall": 0.0, "f1": 0.0}
+
+    supporting_doc_ids = [doc["id"] for doc in docs if doc["is_supporting"]]
+    if not supporting_doc_ids:
+        return {"precision": 0.0, "recall": 0.0, "f1": 0.0}
+
+    intersection = len(set(cited_doc_ids) & set(supporting_doc_ids))
+    precision = intersection / len(cited_doc_ids) if cited_doc_ids else 0.0
+    recall = intersection / len(supporting_doc_ids) if supporting_doc_ids else 0.0
+    f1_score = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0.0
+    return {"precision": precision, "recall": recall, "f1": f1_score}
+
+
+def calculate_supporting_metrics(retrieved: set[str], supporting: set[str]) -> dict[str, float]:
     """Calculate precision, recall, and F1 for supporting titles.
 
     Args:
@@ -34,7 +55,7 @@ def calculate_supporting_metrics(retrieved: Set[str], supporting: Set[str]) -> D
     return {"precision": precision, "recall": recall, "f1": f1_score}
 
 
-def process_row(row: pd.Series) -> Dict[str, Any]:
+def process_row(row: pd.Series) -> dict[str, Any]:
     """Process a single row of data to compute all metrics.
 
     Args:
@@ -55,6 +76,9 @@ def process_row(row: pd.Series) -> Dict[str, Any]:
     # Calculate supporting metrics
     supporting_metrics = calculate_supporting_metrics(retrieved_doc_ids, supporting_doc_ids)
 
+    # Calculate citation metrics
+    citation_metrics = calculate_citation_metrics(row["trajectory"], row["docs"])
+
     return {
         "predicted_answer": predicted_answer,
         "exact_match": answer_exact_match,
@@ -64,6 +88,9 @@ def process_row(row: pd.Series) -> Dict[str, Any]:
         "supporting.precision": supporting_metrics["precision"],
         "supporting.recall": supporting_metrics["recall"],
         "supporting.f1": supporting_metrics["f1"],
+        "citation.precision": citation_metrics["precision"],
+        "citation.recall": citation_metrics["recall"],
+        "citation.f1": citation_metrics["f1"],
     }
 
 
@@ -78,11 +105,11 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load data
-    df = pd.read_json(filepath, lines=True)
+    preds_df = pd.read_json(filepath, lines=True)
 
     # Process all metrics in a single pass
-    metrics_df = pd.DataFrame(df.apply(process_row, axis=1).tolist())
-    result_df = pd.concat([df[["id", "n_hops", "answers", "supporting_doc_slugs"]], metrics_df], axis=1)
+    metrics_df = pd.DataFrame(preds_df.apply(process_row, axis=1).tolist())
+    result_df = pd.concat([preds_df[["id", "n_hops", "answers", "supporting_doc_slugs"]], metrics_df], axis=1)
 
     # Select columns for output
     columns = [
