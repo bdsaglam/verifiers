@@ -474,7 +474,6 @@ accelerate launch \
     --lora-r 256 \
     --lora-alpha 256 \
     --kl-beta 0.01 \
-    --no-scale-rewards \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
 
@@ -543,7 +542,7 @@ accelerate launch \
     --num-generations 8 \
     --gradient-accumulation-steps 8 \
     --n-epochs 1 \
-    --lora-r 256 \
+    --lora-r 64 \
     --lora-alpha 64 \
     --kl-beta 0.01 \
     2>&1 | tee tmp/logs/train-$(date +%s).log

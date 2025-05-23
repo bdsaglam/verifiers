@@ -14,7 +14,9 @@ from verifiers.tools.retrieve import extract_all_retrieved_doc_ids
 
 def pick_trajectory(group: pd.DataFrame) -> pd.Series:
     """Pick a row from the group based on majority voting on `predicted_answer`."""
-    return group.iloc[group["predicted_answer"].value_counts().idxmax()]
+    majority_answer = group["predicted_answer"].value_counts().idxmax()
+    # Select the first row that has the majority answer
+    return group[group["predicted_answer"] == majority_answer].iloc[0]
 
 
 citation_extractor = make_citation_extractor()
