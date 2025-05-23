@@ -449,6 +449,10 @@ python scripts/merge.py \
     ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809 \
     --out outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged
 
+huggingface-cli upload --repo-type model \
+    Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged
+
 
 ## 2025-05-22
 
@@ -462,14 +466,15 @@ accelerate launch \
     --temperature 0.5 \
     --retriever 'hybrid-tei' \
     --retriever-top-k 1 \
-    --n-env-jobs 32 \
-    --batch-size 32 \
+    --n-env-jobs 24 \
+    --batch-size 24 \
     --num-generations 8 \
     --gradient-accumulation-steps 8 \
     --n-epochs 3 \
     --lora-r 256 \
     --lora-alpha 256 \
     --kl-beta 0.01 \
+    --no-scale-rewards \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
 
@@ -508,8 +513,37 @@ accelerate launch \
     --batch-size 32 \
     --num-generations 8 \
     --gradient-accumulation-steps 8 \
-    --n-epochs 3 \
+    --n-epochs 1 \
     --lora-r 64 \
+    --lora-alpha 64 \
+    --kl-beta 0.01 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
+## Download then Merge
+
+huggingface-cli download bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809
+
+python scripts/merge.py \
+    /home/baris/.cache/huggingface/hub/models--bdsaglam--Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809/snapshots/881c06f8f8143a55e1f4a975544ec4324f107c68 \
+    --out ./tmp/outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged
+
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --n-env-jobs 32 \
+    --batch-size 32 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 8 \
+    --n-epochs 1 \
+    --lora-r 256 \
     --lora-alpha 64 \
     --kl-beta 0.01 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
