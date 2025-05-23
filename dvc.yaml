@@ -1,6 +1,5 @@
 stages:
   predict:
-    frozen: true
     cmd: >-
       CUDA_VISIBLE_DEVICES=${devices} python scripts/ragent.py predict
       --n-env-jobs 32
@@ -14,6 +13,7 @@ stages:
       --dataset-split ${dataset.split}
       --retriever ${retriever.name}
       --retriever-top-k ${retriever.top_k}
+      --repeat ${repeat}
       --out data/generated/predictions.jsonl
     deps:
       - scripts/ragent.py
@@ -27,6 +27,7 @@ stages:
       - dataset.split
       - retriever
       - retriever.top_k
+      - repeat
       - devices
     outs:
       - data/generated/predictions.jsonl

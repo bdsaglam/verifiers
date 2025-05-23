@@ -13,5 +13,8 @@ retriever:
   name: hybrid-tei
   top_k: 1
 
+repeat: 1
+
 run: 1
+
 devices: '1'

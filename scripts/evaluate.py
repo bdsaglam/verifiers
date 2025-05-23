@@ -11,6 +11,12 @@ from verifiers.rubrics.citation import make_citation_extractor
 from verifiers.rubrics.utils import get_last_answer
 from verifiers.tools.retrieve import extract_all_retrieved_doc_ids
 
+
+def pick_trajectory(group: pd.DataFrame) -> pd.Series:
+    """Pick a row from the group based on majority voting on `predicted_answer`."""
+    return group.iloc[group["predicted_answer"].value_counts().idxmax()]
+
+
 citation_extractor = make_citation_extractor()
 
 
@@ -106,10 +112,15 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
 
     # Load data
     preds_df = pd.read_json(filepath, lines=True)
+    preds_df["predicted_answer"] = preds_df["trajectory"].apply(get_last_answer)
+    agg_preds_df = preds_df.groupby("id").apply(pick_trajectory).reset_index(drop=True)
 
     # Process all metrics in a single pass
-    metrics_df = pd.DataFrame(preds_df.apply(process_row, axis=1).tolist())
-    result_df = pd.concat([preds_df[["id", "n_hops", "answers", "supporting_doc_slugs"]], metrics_df], axis=1)
+    metrics_df = pd.DataFrame(agg_preds_df.apply(process_row, axis=1).tolist())
+    result_df = pd.concat(
+        [agg_preds_df[["id", "n_hops", "answers", "supporting_doc_slugs"]], metrics_df],
+        axis=1,
+    )
 
     # Select columns for output
     columns = [

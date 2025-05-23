@@ -288,7 +288,7 @@ def predict(
     max_completion_length: int = typer.Option(1024, "-cl", "--max-completion-length"),
     temperature: float = typer.Option(0.5),
     top_p: float = typer.Option(0.95),
-    repeat: int = typer.Option(1, help="Number of times to repeat the generation"),
+    repeat: int = typer.Option(1, help="Number of times to repeat the trajectory"),
     out: Path = typer.Option("./outputs/predictions.jsonl"),
     seed: int = 89,
 ):
