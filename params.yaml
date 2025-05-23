@@ -1,5 +1,5 @@
 dataset:
-  path: bdsaglam/musique-mini
+  path: bdsaglam/musique
   name: answerable
   split: validation
 
