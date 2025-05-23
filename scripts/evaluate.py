@@ -14,9 +14,18 @@ from verifiers.tools.retrieve import extract_all_retrieved_doc_ids
 
 def pick_trajectory(group: pd.DataFrame) -> pd.Series:
     """Pick a row from the group based on majority voting on `predicted_answer`."""
-    majority_answer = group["predicted_answer"].value_counts().idxmax()
-    # Select the first row that has the majority answer
-    return group[group["predicted_answer"] == majority_answer].iloc[0]
+    # Get value counts for 'predicted_answer'. By default, NaN values are dropped.
+    predicted_answers_counts = group["predicted_answer"].value_counts()
+
+    if predicted_answers_counts.empty:
+        # This occurs if all 'predicted_answer' values in the group are NaN.
+        # Since the group itself is guaranteed not to be empty, we fallback
+        # to returning the first row of the group.
+        return group.iloc[0]
+    else:
+        majority_answer = predicted_answers_counts.idxmax()
+        # Select the first row that has this majority answer.
+        return group[group["predicted_answer"] == majority_answer].iloc[0]
 
 
 citation_extractor = make_citation_extractor()
@@ -115,6 +124,8 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
     # Load data
     preds_df = pd.read_json(filepath, lines=True)
     preds_df["predicted_answer"] = preds_df["trajectory"].apply(get_last_answer)
+
+    # Pick a trajectory for each group based on majority voting on `predicted_answer`.
     agg_preds_df = preds_df.groupby("id").apply(pick_trajectory).reset_index(drop=True)
 
     # Process all metrics in a single pass
