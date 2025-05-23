@@ -1,5 +1,6 @@
 stages:
   predict:
+    frozen: true
     cmd: >-
       CUDA_VISIBLE_DEVICES=${devices} python scripts/ragent.py predict
       --n-env-jobs 32

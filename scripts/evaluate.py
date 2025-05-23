@@ -126,13 +126,25 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
         "supporting.precision",
         "supporting.recall",
         "supporting.f1",
+        "citation.precision",
+        "citation.recall",
+        "citation.f1",
     ]
 
     # Save results
     result_df[columns].to_json(output_dir / "results.jsonl", orient="records", lines=True)
 
     # Calculate and save aggregate scores
-    score_columns = ["exact_match", "f1", "supporting.precision", "supporting.recall", "supporting.f1"]
+    score_columns = [
+        "exact_match",
+        "f1",
+        "supporting.precision",
+        "supporting.recall",
+        "supporting.f1",
+        "citation.precision",
+        "citation.recall",
+        "citation.f1",
+    ]
     scores = result_df[score_columns].mean().to_dict()
 
     with open(output_dir / "scores.json", "w") as f:
