@@ -54,7 +54,7 @@ def prepare_dataset(dataset_str: str) -> Dataset:
         ds = preprocess_dataset(ds)
         ds_list.append(ds)
 
-    return concatenate_datasets(ds_list)
+    return concatenate_datasets(ds_list).shuffle(seed=89)
 
 
 def create_environment(
@@ -121,7 +121,7 @@ def train(
     kl_beta: float = typer.Option(0.04, help="KL beta"),
     batch_size: int = typer.Option(32),
     gradient_accumulation_steps: int = typer.Option(2),
-    learning_rate: float = typer.Option(5e-6),
+    learning_rate: float = typer.Option(1e-6),
     peft: bool = typer.Option(True),
     lora_r: int = typer.Option(32, help="LORA rank"),
     lora_alpha: int = typer.Option(64, help="LORA alpha"),
