@@ -7,7 +7,7 @@ dvc exp run --queue \
     -S model.few_shot_prob='0.0' \
     -S retriever.name='hybrid-tei' \
     -S retriever.top_k='1' \
-    -S repeat='5' \
+    -S repeat='1' \
     -S run='1' \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
@@ -21,7 +21,7 @@ dvc exp run --queue \
     -S model.few_shot_prob='0.0' \
     -S retriever.name='hybrid-tei' \
     -S retriever.top_k='1' \
-    -S repeat='1' \
+    -S repeat='5' \
     -S run='1' \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
