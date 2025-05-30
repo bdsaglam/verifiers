@@ -1,7 +1,7 @@
 #!/bin/sh
 
 dvc exp run --queue \
-    -S model.path='meta-llama/Llama-3.1-70B-Instruct' \
+    -S model.path='Qwen/Qwen2.5-32B-Instruct' \
     -S model.temperature='0.5' \
     -S model.top_p='0.95' \
     -S model.few_shot_prob='0.0' \
@@ -15,7 +15,7 @@ dvc exp run --queue \
     -S devices='"0,1,2,3"'
 
 dvc exp run --queue \
-    -S model.path='Qwen/Qwen2.5-32B-Instruct' \
+    -S model.path='meta-llama/Llama-3.1-70B-Instruct' \
     -S model.temperature='0.5' \
     -S model.top_p='0.95' \
     -S model.few_shot_prob='0.0' \
