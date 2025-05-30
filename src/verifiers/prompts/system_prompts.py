@@ -63,7 +63,7 @@ For each step:
 For instance,
 <tool>
 {{
-  "name": "search",
+  "name": "retrieve",
   "args": {{
     "query": "..."
   }}
@@ -78,5 +78,5 @@ For instance,
 
 - Tools expect specific JSON input formats.
 - Do not make up tools or arguments that aren't listed in the tool descriptions.
-- If search doesn't return a relevant document, try different queries. Your answer must be based solely on retrieved documents and the question is definitely answerable. Continue searching until you find the relevant information.
+- If the `retrieve` tool doesn't return a relevant document, try different queries. Your answer must be based solely on retrieved documents and the question is definitely answerable. Continue searching until you find the relevant information.
 """

@@ -159,7 +159,7 @@ def extract_all_retrieved_doc_ids(trajectory: list[Message]) -> Generator[str, N
         yield from extract_retrieved_doc_ids(msg["content"])
 
 
-def make_search_tool(name: str = "lexical", top_k: int = 3) -> Callable:
+def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     if name == "golden":
         retriever = golden_retriever
     elif name == "bm25":
@@ -203,9 +203,11 @@ def make_search_tool(name: str = "lexical", top_k: int = 3) -> Callable:
     else:
         raise ValueError(f"Invalid retriever name: {name}")
 
-    def search(query: str, run_context: RunContext | None = None, **kwargs) -> str:
+    def retrieve(query: str, run_context: RunContext | None = None, **kwargs) -> str:
         """
-        Retrieve for relevant documents by the query. The results become better if the query is more specific. It excludes documents that have already been retrieved.
+        Retrieve for relevant documents by the query. The results become better if the query is more specific.
+        Args:
+            query: The query to retrieve documents for.
         """
         assert run_context is not None, "Run context is required"
         docs = [doc for doc in run_context["input"]["docs"]]
@@ -215,7 +217,7 @@ def make_search_tool(name: str = "lexical", top_k: int = 3) -> Callable:
             raise RetrieveToolError(f"Error retrieving documents: {e}")
         return "\n\n".join([format_doc(x) for x in retrieved_docs])
 
-    return search
+    return retrieve
 
 
 def make_list_tool() -> Callable:

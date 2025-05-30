@@ -26,7 +26,7 @@ from verifiers.rubrics.musique import (
     musique_f1_reward_func,
     musique_supporting_recall_reward_func,
 )
-from verifiers.tools import make_search_tool
+from verifiers.tools import make_retrieve_tool
 from verifiers.tools.retrieve import make_get_tool
 from verifiers.trainers.grpo_env_trainer import GRPOEnvTrainer
 from verifiers.utils.cuda import get_half_precision_dtype
@@ -84,7 +84,7 @@ def create_environment(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        tools=[make_search_tool(name=retriever, top_k=top_k), make_get_tool()],
+        tools=[make_retrieve_tool(name=retriever, top_k=top_k), make_get_tool()],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         few_shot=RETRIEVE_FEW_SHOT[0],
         few_shot_prob=few_shot_prob,
