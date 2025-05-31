@@ -611,3 +611,51 @@ accelerate launch \
     --lora-r 512 \
     --lora-alpha 512 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+
+
+## 2025-05-30
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'Qwen/Qwen2.5-14B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --kl-beta 0.01 \
+    --n-env-jobs 8 \
+    --batch-size 8 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 16 \
+    --n-epochs 1 \
+    --lora-r 512 \
+    --lora-alpha 512 \
+    --scale-rewards \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
+## 2025-05-31
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'meta-llama/Llama-3.1-8B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --kl-beta 0.02 \
+    --n-env-jobs 8 \
+    --batch-size 8 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 16 \
+    --n-epochs 1 \
+    --no-peft \
+    --scale-rewards \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
