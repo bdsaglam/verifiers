@@ -659,3 +659,25 @@ accelerate launch \
     --scale-rewards \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
+## 2025-06-01
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'meta-llama/Llama-3.1-8B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 0.5 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --kl-beta 0.02 \
+    --n-env-jobs 16 \
+    --batch-size 16 \
+    --num-generations 16 \
+    --gradient-accumulation-steps 16 \
+    --n-epochs 1 \
+    --no-peft \
+    --scale-rewards \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
