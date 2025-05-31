@@ -5,6 +5,10 @@ import httpx
 from pydantic import BaseModel
 
 
+class RerankError(Exception):
+    pass
+
+
 class RerankResult(BaseModel):
     index: int
     relevance_score: float
@@ -78,7 +82,7 @@ class RerankClient:
             except Exception:
                 error_detail = response.text
 
-            raise Exception(f"API request failed with status {response.status_code}: {error_detail}")
+            raise RerankError(f"API request failed with status {response.status_code}: {error_detail}")
 
         return RerankResponse.model_validate(response.json())
 
@@ -90,7 +94,7 @@ class RerankClient:
             response = client.get(url)
 
         if response.status_code != 200:
-            raise Exception(f"Health check failed with status {response.status_code}")
+            raise RuntimeError(f"Health check failed with status {response.status_code}")
 
         return response.json()
 

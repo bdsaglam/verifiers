@@ -58,6 +58,26 @@ services:
       retries: 3
       start_period: 40s 
   
+  wiki-search:
+    build:
+      context: ./services/wikisearch/
+      dockerfile: Dockerfile
+    ports:
+      - "8932:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - WEB_CONCURRENCY=32
+    volumes:
+      - ~/.cache/pyserini/indexes:/root/.cache/pyserini/indexes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+  
   # localai-api:
   #   image: localai/localai:latest-aio-gpu-nvidia-cuda-12
   #   healthcheck:
