@@ -60,7 +60,7 @@ services:
   
   wiki-search:
     build:
-      context: ./services/wikisearch/
+      context: ./services/wiki_search/
       dockerfile: Dockerfile
     ports:
       - "8932:8000"

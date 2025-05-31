@@ -1,7 +1,7 @@
 from typing import Callable
 
 from verifiers.models import RunContext
-from verifiers.wikisearch import SearchDocument, WikiSearchClient, WikiSearchError
+from verifiers.wiki_search import SearchDocument, WikiSearchClient, WikiSearchError
 
 
 class WikiSearchToolError(Exception):
