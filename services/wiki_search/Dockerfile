@@ -1,13 +1,21 @@
-FROM python:3.12-slim
+FROM openjdk:21-jdk-slim
 
-# Install Java and other dependencies
-RUN apt-get update && apt-get install -y \
-    openjdk-21-jdk \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python and other dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-venv \
+        ca-certificates && \
+    ln -s /usr/bin/python3 /usr/bin/python && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set Java options
 ENV JAVA_OPTS="-Xms16g -Xmx32g -XX:MaxDirectMemorySize=16g"
+
+# Create and activate virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Install Python dependencies
 COPY requirements.txt .
