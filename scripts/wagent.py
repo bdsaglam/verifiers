@@ -272,7 +272,7 @@ def train(
 @app.command("predict")
 def predict(
     model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
-    dataset_path: str = typer.Option("bdsaglam/triviaqa-musique-mini"),
+    dataset_path: str = typer.Option("bdsaglam/triviaqa-wiki-musique-mini"),
     dataset_name: str = typer.Option("default"),
     dataset_split: str = typer.Option("validation"),
     search_top_k: int = typer.Option(1, help="Number of search results to use"),
