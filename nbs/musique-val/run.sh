@@ -12,7 +12,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-7B-Instruct' \
@@ -26,7 +26,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-14B-Instruct' \
@@ -40,7 +40,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-7B-Instruct' \
@@ -54,7 +54,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250526_110630' \
@@ -68,7 +68,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='meta-llama/Llama-3.1-70B-Instruct' \
@@ -82,7 +82,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-32B-Instruct' \
@@ -96,7 +96,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged' \
@@ -110,7 +110,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged' \
@@ -124,7 +124,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250526_110630' \
@@ -138,7 +138,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-32B-Instruct' \
@@ -152,7 +152,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-musique-merged' \
@@ -166,7 +166,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='meta-llama/Llama-3.1-8B-Instruct' \
@@ -180,7 +180,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250520_080809-merged' \
@@ -194,7 +194,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='meta-llama/Llama-3.1-70B-Instruct' \
@@ -208,7 +208,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250508_213215-merged' \
@@ -222,7 +222,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='meta-llama/Llama-3.1-8B-Instruct' \
@@ -236,7 +236,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-14B-Instruct' \
@@ -250,7 +250,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='Qwen/Qwen2.5-32B-Instruct' \
@@ -264,7 +264,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 
 dvc exp run --queue \
     -S model.path='meta-llama/Llama-3.1-70B-Instruct' \
@@ -278,5 +278,5 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/musique' \
     -S dataset.name='answerable' \
     -S dataset.split='validation' \
-    -S devices='"0,1,2,3"'
+    -S devices='"2,3"'
 

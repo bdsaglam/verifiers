@@ -106,7 +106,7 @@ def get_model_name(model_path: str) -> str:
 
 @app.command("train")
 def train(
-    model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
+    model_path: str = typer.Option("meta-llama/Llama-3.1-8B-Instruct", "--model"),
     datasets_str: str = typer.Option("bdsaglam/musique,answerable,train", "--datasets"),
     noise_rate: float = typer.Option(1.0, help="Noise rate to use"),
     retriever: str = typer.Option("hybrid", help="Retriever to use"),
@@ -276,7 +276,7 @@ def train(
 
 @app.command("predict")
 def predict(
-    model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
+    model_path: str = typer.Option("meta-llama/Llama-3.1-8B-Instruct", "--model"),
     dataset_path: str = typer.Option("bdsaglam/musique-mini"),
     dataset_name: str = typer.Option("answerable"),
     dataset_split: str = typer.Option("validation"),
