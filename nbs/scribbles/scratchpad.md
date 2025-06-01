@@ -691,3 +691,26 @@ accelerate launch \
     --scale-rewards \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
+### Dr. GRPO recipe
+
+accelerate launch \
+    --config-file configs/zero3.yaml \
+    --num-processes 3 \
+    scripts/ragent.py train \
+    --datasets 'bdsaglam/musique,answerable,train' \
+    --model 'meta-llama/Llama-3.1-8B-Instruct' \
+    --few-shot-prob 0.0 \
+    --temperature 1 \
+    --retriever 'hybrid-tei' \
+    --retriever-top-k 1 \
+    --kl-beta 0 \
+    --n-env-jobs 16 \
+    --batch-size 16 \
+    --num-generations 8 \
+    --gradient-accumulation-steps 16 \
+    --n-epochs 1 \
+    --lora-r 256 \
+    --lora-alpha 256 \
+    --max-completion-length 2048 \
+    2>&1 | tee tmp/logs/train-$(date +%s).log
+
