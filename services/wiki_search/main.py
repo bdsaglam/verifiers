@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -17,6 +17,11 @@ try:
 except Exception as e:
     print(f"Error initializing searcher: {e}")
     _searcher = None
+
+
+class SearchRequest(BaseModel):
+    query: str
+    top_n: Optional[int] = 3
 
 
 class SearchDocument(BaseModel):
@@ -45,19 +50,18 @@ async def health_check():
 
 
 @app.post("/search")
-async def search(query: str, top_n: Optional[int] = 3) -> SearchResponse:
+async def search(request: SearchRequest) -> SearchResponse:
     """
     Search Wikipedia articles.
 
     Args:
-        query: Search query
-        top_n: Number of results to return (default: 3)
+        request: Search request containing query and optional top_n
     """
     if _searcher is None:
         raise HTTPException(status_code=503, detail="Search service not initialized")
 
     try:
-        hits = _searcher.search(query, k=top_n)
+        hits = _searcher.search(request.query, k=request.top_n)
         if not hits:
             return SearchResponse(results=[])
 
@@ -65,14 +69,21 @@ async def search(query: str, top_n: Optional[int] = 3) -> SearchResponse:
         for i, hit in enumerate(hits):
             doc = _searcher.doc(hit.docid)
             contents = json.loads(doc.raw())
+            title = contents.get("title", "")
+            body = contents.get("contents", "")
+            if not title:
+                title, body = body.split("\n", 1)
+                title = title.strip()
+                body = body.strip()
+
             results.append(
                 SearchResult(
                     rank=i + 1,
                     score=hit.score,
                     document=SearchDocument(
                         id=hit.docid,
-                        title=contents.get("title", ""),
-                        body=contents.get("contents", ""),
+                        title=title,
+                        body=body,
                     ),
                 )
             )

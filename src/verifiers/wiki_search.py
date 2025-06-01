@@ -18,6 +18,7 @@ class SearchDocument(BaseModel):
 class SearchResult(BaseModel):
     rank: int
     document: SearchDocument
+    score: float
 
 
 class SearchResponse(BaseModel):
