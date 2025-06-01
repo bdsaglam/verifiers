@@ -78,7 +78,7 @@ def main():
 
     for _, row in df.iterrows():
         name = row.get("name")
-        if not name:
+        if not name or name == "main":
             continue
         with open(output_dir / f"{name}.json", "w") as f:
             json.dump(dict(row), f)
