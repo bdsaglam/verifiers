@@ -111,7 +111,7 @@ def process_row(row: pd.Series) -> dict[str, Any]:
     }
 
 
-def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(...)):
+def evaluate(filepath: Path = typer.Argument(), out: Path = typer.Option(...)):
     """Evaluate model performance and save results.
 
     Args:
@@ -119,7 +119,7 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
         output_dir: Directory to save output files
     """
     # Create output directory if it doesn't exist
-    output_dir.mkdir(parents=True, exist_ok=True)
+    out.mkdir(parents=True, exist_ok=True)
 
     # Load data
     preds_df = pd.read_json(filepath, lines=True)
@@ -156,7 +156,7 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
     ]
 
     # Save results
-    result_df[columns].to_json(output_dir / "results.jsonl", orient="records", lines=True)
+    result_df[columns].to_json(out / "results.jsonl", orient="records", lines=True)
 
     # Calculate and save aggregate scores
     score_columns = [
@@ -171,7 +171,7 @@ def evaluate(filepath: Path = typer.Argument(), output_dir: Path = typer.Option(
     ]
     scores = result_df[score_columns].mean().to_dict()
 
-    with open(output_dir / "scores.json", "w") as f:
+    with open(out / "scores.json", "w") as f:
         json.dump(scores, f, indent=2)
 
 
