@@ -8,6 +8,7 @@ from typing import Any
 
 import torch
 import typer
+import wandb
 from accelerate import Accelerator
 from datasets import Dataset, concatenate_datasets, load_dataset
 from dotenv import load_dotenv
@@ -15,18 +16,16 @@ from peft import LoraConfig
 from tqdm import tqdm
 from trl import GRPOConfig
 
-import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
-from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
-from verifiers.rubrics.citation import make_citation_reward_func
+from verifiers.prompts.few_shots import WIKI_FEW_SHOT
+from verifiers.prompts.system_prompts import WIKI_QA_TOOL_PROMPT_TEMPLATE
 from verifiers.rubrics.language import natural_language_reward_func
 from verifiers.rubrics.musique import (
     musique_em_reward_func,
     musique_f1_reward_func,
-    musique_supporting_recall_reward_func,
 )
-from verifiers.tools import  make_wiki_search_tool
+from verifiers.tools import make_wiki_search_tool
 from verifiers.trainers.grpo_env_trainer import GRPOEnvTrainer
 from verifiers.utils.cuda import get_half_precision_dtype
 from verifiers.utils.logging_utils import setup_logging
@@ -83,8 +82,8 @@ def create_environment(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         tools=[make_wiki_search_tool(top_n=top_k)],
-        system_prompt=QA_TOOL_PROMPT_TEMPLATE,
-        few_shot=RETRIEVE_FEW_SHOT[0],
+        system_prompt=WIKI_QA_TOOL_PROMPT_TEMPLATE,
+        few_shot=WIKI_FEW_SHOT[0],
         few_shot_prob=few_shot_prob,
         max_steps=50,
         n_jobs=n_jobs,
@@ -107,7 +106,8 @@ def train(
     model_path: str = typer.Option("meta-llama/Llama-3.1-8B-Instruct", "--model"),
     datasets_str: str = typer.Option("bdsaglam/musique,answerable,train", "--datasets"),
     noise_rate: float = typer.Option(1.0, help="Noise rate to use"),
-    search_top_k: int = typer.Option(1, help="Number of search results to use"),
+    retriever: str = typer.Option("wiki", help="Retriever to use"),
+    retriever_top_k: int = typer.Option(1, help="Number of search results to use"),
     few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
@@ -149,7 +149,7 @@ def train(
         tokenizer=tokenizer,
         train_dataset=train_dataset,
         n_jobs=n_env_jobs,
-        top_k=search_top_k,
+        top_k=retriever_top_k,
         few_shot_prob=few_shot_prob,
     )
 
@@ -245,7 +245,7 @@ def train(
             {
                 "datasets": datasets_str,
                 "noise_rate": noise_rate,
-                "search_top_k": search_top_k,
+                "search_top_k": retriever_top_k,
                 "few_shot_prob": few_shot_prob,
                 "n_env_jobs": n_env_jobs,
                 "max_prompt_length": max_prompt_length,
@@ -275,7 +275,8 @@ def predict(
     dataset_path: str = typer.Option("bdsaglam/triviaqa-wiki-musique-mini"),
     dataset_name: str = typer.Option("default"),
     dataset_split: str = typer.Option("validation"),
-    search_top_k: int = typer.Option(1, help="Number of search results to use"),
+    retriever: str = typer.Option("wiki", help="Retriever to use"),
+    retriever_top_k: int = typer.Option(1, help="Number of search results to use"),
     few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(32, help="Number of environments to run in parallel"),
     batch_size: int = typer.Option(32, "--batch-size", "-bs"),
@@ -299,7 +300,7 @@ def predict(
         tokenizer=tokenizer,
         train_dataset=dataset,
         n_jobs=n_env_jobs,
-        top_k=search_top_k,
+        top_k=retriever_top_k,
         few_shot_prob=few_shot_prob,
     )
 

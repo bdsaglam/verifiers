@@ -295,3 +295,45 @@ RETRIEVE_FEW_SHOT = [
         },
     ]
 ]
+
+WIKI_FEW_SHOT = [
+    [
+        {
+            "role": "user",
+            "content": "Which country was the inventor of AC born?",
+        },
+        {
+            "role": "assistant",
+            "content": tool_parser.format(
+                think="First, I need to find the inventor of alternative current (AC).",
+                tool=json.dumps({"name": "search", "args": {"query": "inventor of alternative current AC"}}),
+            ),
+        },
+        {
+            "role": "tool",
+            "content": result_parser.format(
+                result="Nikola Tesla developed polyphase alternating current system of generators, motors and transformers and held 40 basic U.S. patents on the system, which George Westinghouse bought, determined to supply America with the Tesla system...."
+            ),
+        },
+        {
+            "role": "assistant",
+            "content": tool_parser.format(
+                think="According to the information retrieved, the inventor of AC is Nikola Tesla. Now, I need to find where he was born.",
+                tool=json.dumps({"name": "search", "args": {"query": "country birth place of Nikola Tesla"}}),
+            ),
+        },
+        {
+            "role": "tool",
+            "content": result_parser.format(
+                result="Nikola Tesla was born on July 9, 1856, in Smiljan, a village in rural Croatia, then part of the Austro-Hungarian empire. He was the son of a Serbian Orthodox priest who was a notable preacher, and a clever and inventive, though uneducated, mother."
+            ),
+        },
+        {
+            "role": "assistant",
+            "content": answer_parser.format(
+                think="Nikola Tesla was born in Croatia.",
+                answer="Croatia",
+            ),
+        },
+    ]
+]

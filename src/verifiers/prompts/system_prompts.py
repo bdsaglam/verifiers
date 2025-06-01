@@ -80,3 +80,36 @@ For instance,
 - Do not make up tools or arguments that aren't listed in the tool descriptions.
 - If the `retrieve` tool doesn't return a relevant document, try different queries. Your answer must be based solely on retrieved documents and the question is definitely answerable. Continue searching until you find the relevant information.
 """
+
+
+WIKI_QA_TOOL_PROMPT_TEMPLATE = """\
+Answer the question based on the information provided by tools. You have access to the following tools:
+====
+{tool_descriptions}
+====
+
+For each step:
+1. Think through your reasoning inside <think> tags
+2. If needed, use a tool by writing a JSON command inside <tool> tags with:
+   - "name": the tool to use
+   - "args": the arguments for the tool
+For instance,
+<tool>
+{{
+  "name": "search",
+  "args": {{
+    "query": "..."
+  }}
+}}
+</tool>
+3. You will see the tool's output inside <result> tags
+4. Continue until you have found the answer
+5. In the **last** step, 
+  - Reflect on your previous steps inside <think> tags
+  - Cite the documents you used to answer the question inside <cite> tags by their IDs, e.g. `<cite>1, 2, 3</cite>`. This will be used to determine whether you back your answer with the information provided by the tools.
+  - Give your final answer inside <answer> tags
+
+- Tools expect specific JSON input formats.
+- Do not make up tools or arguments that aren't listed in the tool descriptions.
+- If the `retrieve` tool doesn't return a relevant document, try different queries. Your answer must be based solely on retrieved documents and the question is definitely answerable. Continue searching until you find the relevant information.
+"""
