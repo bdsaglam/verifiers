@@ -642,6 +642,11 @@ python scripts/merge.py \
     ./outputs/Qwen2.5-14B-Instruct-ragent-grpo-20250530_155020/checkpoint-200 \
     --out outputs/Qwen2.5-14B-Instruct-ragent-grpo-20250530_155020-merged
 
+huggingface-cli upload --repo-type model \
+    Qwen2.5-14B-Instruct-ragent-grpo-20250530_155020-merged \
+    ./outputs/Qwen2.5-14B-Instruct-ragent-grpo-20250530_155020-merged
+
+
 ## 2025-05-31
 
 accelerate launch \
