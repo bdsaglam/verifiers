@@ -637,6 +637,11 @@ accelerate launch \
     --scale-rewards \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
+
+python scripts/merge.py \
+    ./outputs/Qwen2.5-14B-Instruct-ragent-grpo-20250530_155020/checkpoint-200 \
+    --out outputs/Qwen2.5-14B-Instruct-ragent-grpo-20250530_155020-merged
+
 ## 2025-05-31
 
 accelerate launch \
@@ -671,7 +676,7 @@ accelerate launch \
     --temperature 0.5 \
     --retriever 'hybrid-tei' \
     --retriever-top-k 1 \
-    --kl-beta 0.02 \
+    --kl-beta 0.04 \
     --n-env-jobs 16 \
     --batch-size 16 \
     --num-generations 16 \

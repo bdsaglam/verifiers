@@ -13,7 +13,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"0"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -28,7 +28,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"2"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -43,7 +43,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"3"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -58,7 +58,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"3"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -73,7 +73,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"2"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -88,7 +88,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"3"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -103,7 +103,7 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"0"'
 
 dvc exp run --queue \
     -S agent='wagent' \
@@ -118,5 +118,5 @@ dvc exp run --queue \
     -S dataset.path='bdsaglam/triviaqa-wiki-musique-mini' \
     -S dataset.name='default' \
     -S dataset.split='validation' \
-    -S devices='"0,2,3"'
+    -S devices='"2"'
 
