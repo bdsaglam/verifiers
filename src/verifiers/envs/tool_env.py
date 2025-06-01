@@ -29,7 +29,7 @@ class ToolEnv(MultiStepEnv):
         assistant_parser: XMLParser = XMLParser(fields=["think", ("tool", "answer")]),
         env_parser: XMLParser = XMLParser(fields=["result"]),
         few_shot: List[Dict[str, str]] = [],
-        few_shot_prob: float = 0.5,
+        few_shot_prob: float = 0.0,
         additional_sampling_args={},
         mask_env_response: bool = True,
         **kwargs,

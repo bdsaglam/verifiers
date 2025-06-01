@@ -205,7 +205,7 @@ def make_retrieve_tool(name: str = "lexical", top_k: int = 3) -> Callable:
 
     def retrieve(query: str, run_context: RunContext | None = None, **kwargs) -> str:
         """
-        Retrieve for relevant documents by the query. The results become better if the query is more specific.
+        Retrieve for relevant documents by the query. The results get better with more specific queries.
         Args:
             query: The query to retrieve documents for.
         """

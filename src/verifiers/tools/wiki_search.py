@@ -28,17 +28,10 @@ def make_wiki_search_tool(
 
     def wiki_search(query: str, run_context: RunContext | None = None, **kwargs) -> str:
         """
-        Search for documents using the wiki search API.
+        Search for documents using the Wikipedia search API. The results get better with more specific queries.
 
         Args:
             query: The search query.
-            run_context: Optional run context (not used in this tool).
-
-        Returns:
-            Formatted string with search results.
-
-        Examples:
-            {"query": "what is machine learning"}
         """
         try:
             response = client.search(query, top_n=top_n)

@@ -26,8 +26,7 @@ from verifiers.rubrics.musique import (
     musique_f1_reward_func,
     musique_supporting_recall_reward_func,
 )
-from verifiers.tools import make_retrieve_tool
-from verifiers.tools.retrieve import make_get_tool
+from verifiers.tools import  make_wiki_search_tool
 from verifiers.trainers.grpo_env_trainer import GRPOEnvTrainer
 from verifiers.utils.cuda import get_half_precision_dtype
 from verifiers.utils.logging_utils import setup_logging
@@ -59,7 +58,6 @@ def prepare_dataset(dataset_str: str) -> Dataset:
 
 def create_environment(
     tokenizer: Any,
-    retriever: str,
     train_dataset: Dataset,
     eval_dataset: Dataset | None = None,
     n_jobs: int = 1,
@@ -84,7 +82,7 @@ def create_environment(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        tools=[make_retrieve_tool(name=retriever, top_k=top_k), make_get_tool()],
+        tools=[make_wiki_search_tool(top_n=top_k)],
         system_prompt=QA_TOOL_PROMPT_TEMPLATE,
         few_shot=RETRIEVE_FEW_SHOT[0],
         few_shot_prob=few_shot_prob,
@@ -109,8 +107,7 @@ def train(
     model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
     datasets_str: str = typer.Option("bdsaglam/musique,answerable,train", "--datasets"),
     noise_rate: float = typer.Option(1.0, help="Noise rate to use"),
-    retriever: str = typer.Option("hybrid", help="Retriever to use"),
-    retriever_top_k: int = typer.Option(1, help="Number of retriever results to use"),
+    search_top_k: int = typer.Option(1, help="Number of search results to use"),
     few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(1, help="Number of environments to run in parallel"),
     max_prompt_length: int = typer.Option(4096),
@@ -150,10 +147,9 @@ def train(
     # Initialize environment based on env_type
     vf_env = create_environment(
         tokenizer=tokenizer,
-        retriever=retriever,
         train_dataset=train_dataset,
         n_jobs=n_env_jobs,
-        top_k=retriever_top_k,
+        top_k=search_top_k,
         few_shot_prob=few_shot_prob,
     )
 
@@ -223,8 +219,8 @@ def train(
     reward_funcs = [
         musique_em_reward_func,
         musique_f1_reward_func,
-        musique_supporting_recall_reward_func,
-        make_citation_reward_func(cite_tag="cite"),
+        # musique_supporting_recall_reward_func,
+        # make_citation_reward_func(cite_tag="cite"),
         natural_language_reward_func,
         *vf_env.get_reward_funcs(),
     ]
@@ -249,8 +245,7 @@ def train(
             {
                 "datasets": datasets_str,
                 "noise_rate": noise_rate,
-                "retriever": retriever,
-                "retriever_top_k": retriever_top_k,
+                "search_top_k": search_top_k,
                 "few_shot_prob": few_shot_prob,
                 "n_env_jobs": n_env_jobs,
                 "max_prompt_length": max_prompt_length,
@@ -277,11 +272,10 @@ def train(
 @app.command("predict")
 def predict(
     model_path: str = typer.Option("meta-llama/meta-Llama-3.1-8B-Instruct", "--model"),
-    dataset_path: str = typer.Option("bdsaglam/musique-mini"),
-    dataset_name: str = typer.Option("answerable"),
+    dataset_path: str = typer.Option("bdsaglam/triviaqa-musique-mini"),
+    dataset_name: str = typer.Option("default"),
     dataset_split: str = typer.Option("validation"),
-    retriever: str = typer.Option("bm25", help="Retriever to use"),
-    retriever_top_k: int = typer.Option(1, help="Number of retriever results to use"),
+    search_top_k: int = typer.Option(1, help="Number of search results to use"),
     few_shot_prob: float = typer.Option(0.0, help="Probability of using few-shot examples"),
     n_env_jobs: int = typer.Option(32, help="Number of environments to run in parallel"),
     batch_size: int = typer.Option(32, "--batch-size", "-bs"),
@@ -293,9 +287,6 @@ def predict(
     seed: int = 89,
 ):
     """Predict with a model on a dataset using RAG-based verification."""
-    if n_env_jobs > 1 and retriever == "bm25":
-        raise ValueError("BM25 does not support parallel environments. Run rerank service and use 'lexical', instead.")
-
     # Load dataset
     dataset = prepare_dataset(f"{dataset_path},{dataset_name},{dataset_split}")
     log.info(f"Dataset: {len(dataset)}")
@@ -308,8 +299,7 @@ def predict(
         tokenizer=tokenizer,
         train_dataset=dataset,
         n_jobs=n_env_jobs,
-        retriever=retriever,
-        top_k=retriever_top_k,
+        top_k=search_top_k,
         few_shot_prob=few_shot_prob,
     )
 
