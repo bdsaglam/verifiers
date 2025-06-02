@@ -44,14 +44,27 @@ app = typer.Typer()
 accelerator = Accelerator()
 
 
-def prepare_dataset(dataset_str: str) -> Dataset:
-    from verifiers.datasets.musique import preprocess_dataset
+def prepare_dataset(path: str, name: str, split: str) -> Dataset:
+    ds = load_dataset(path, name, split=split)
+    if "trivia_qa" in path:
+        from verifiers.datasets.triviaqa import preprocess_dataset
 
+        ds = preprocess_dataset(ds)
+    elif "musique" in path:
+        from verifiers.datasets.musique import preprocess_dataset
+
+        ds = preprocess_dataset(ds)
+    return ds
+
+
+def prepare_datasets(dataset_str: str) -> Dataset:
+    """
+    Prepare a dataset from a string of the form "path,name,split".
+    """
     ds_list = []
     for s in dataset_str.split(";"):
         path, name, split = s.split(",")
-        ds = load_dataset(path, name, split=split)
-        ds = preprocess_dataset(ds)
+        ds = prepare_dataset(path, name, split)
         ds_list.append(ds)
 
     return concatenate_datasets(ds_list).shuffle(seed=89)
@@ -138,7 +151,7 @@ def train(
     out.mkdir(parents=True, exist_ok=True)
 
     # Load dataset
-    train_dataset = prepare_dataset(datasets_str)
+    train_dataset = prepare_datasets(datasets_str)
     train_dataset = train_dataset.map(
         lambda x: {"docs": [doc for doc in x["docs"] if doc["is_supporting"] or random.random() < noise_rate]}
     )
@@ -297,7 +310,7 @@ def predict(
         raise ValueError("BM25 does not support parallel environments. Run rerank service and use 'lexical', instead.")
 
     # Load dataset
-    dataset = prepare_dataset(f"{dataset_path},{dataset_name},{dataset_split}")
+    dataset = prepare_datasets(f"{dataset_path},{dataset_name},{dataset_split}")
     log.info(f"Dataset: {len(dataset)}")
 
     # Load model and tokenizer
