@@ -714,6 +714,9 @@ accelerate launch \
     --max-completion-length 2048 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
+python scripts/merge.py \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250602_094840/checkpoint-200 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250602_094840-merged
 
 ## 2025-06-03
 
