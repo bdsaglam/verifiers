@@ -24,6 +24,8 @@ dependencies = [
     "vllm==0.7.0",
     "wandb",
     "nltk",
+    "openai",
+    "logfire"
 ]
 
 [project.optional-dependencies]

@@ -8,6 +8,7 @@ from typing import Any
 
 import torch
 import typer
+import wandb
 from accelerate import Accelerator
 from datasets import Dataset, concatenate_datasets, load_dataset
 from dotenv import load_dotenv
@@ -15,7 +16,6 @@ from peft import LoraConfig
 from tqdm import tqdm
 from trl import GRPOConfig
 
-import wandb
 from verifiers.envs.tool_env import ToolEnv
 from verifiers.imports import LLM, SamplingParams
 from verifiers.prompts import QA_TOOL_PROMPT_TEMPLATE, RETRIEVE_FEW_SHOT
@@ -314,7 +314,8 @@ def predict(
     log.info(f"Dataset: {len(dataset)}")
 
     # Load model and tokenizer
-    tokenizer = get_tokenizer(model_path)
+    tokenizer_path = "meta-llama/Llama-3.1-8B-Instruct" if "openai" in model_path else model_path
+    tokenizer = get_tokenizer(tokenizer_path)
 
     # Initialize environment
     vf_env = create_environment(

@@ -720,6 +720,7 @@ accelerate launch \
 python scripts/ragent.py predict \
       --n-env-jobs 32 \
       --batch-size 32 \
+      --n-env-jobs 1 \
       --model openai/gpt-4.1 \
       --temperature 0.5 \
       --top-p 0.95 \

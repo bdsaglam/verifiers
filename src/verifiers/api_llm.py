@@ -5,6 +5,10 @@ from openai import OpenAI
 
 from verifiers.imports import CompletionOutput, RequestOutput, SamplingParams
 
+import logfire
+
+logfire.configure()
+logfire.instrument_openai()
 
 class LLM:
     """API-based LLM implementation matching vLLM's interface"""
@@ -55,7 +59,6 @@ class LLM:
                 temperature=sampling_params.temperature,
                 top_p=sampling_params.top_p,
                 max_tokens=sampling_params.max_tokens,
-                stop=sampling_params.stop,
             )
 
             # Get completion text and tokens
@@ -63,6 +66,7 @@ class LLM:
             completion_tokens = self.encoding.encode(completion_text)
 
             # Convert API response to vLLM-style output
+            stop_reason = next((token for token in sampling_params.stop if token in completion_text[-16:]), None)
             completion = CompletionOutput(
                 index=0,
                 text=completion_text,
@@ -70,7 +74,7 @@ class LLM:
                 cumulative_logprob=None,
                 logprobs=None,
                 finish_reason=response.choices[0].finish_reason,
-                stop_reason=None,
+                stop_reason=stop_reason,
             )
 
             # Construct full prompt text
@@ -82,6 +86,8 @@ class LLM:
                     prompt=prompt_text,
                     prompt_token_ids=prompt_token_ids,
                     outputs=[completion],
+                    prompt_logprobs=None,
+                    finished=True,
                 )
             )
 
