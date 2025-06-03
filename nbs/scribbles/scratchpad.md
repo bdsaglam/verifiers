@@ -714,3 +714,20 @@ accelerate launch \
     --max-completion-length 2048 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
 
+
+## 2025-06-03
+
+python scripts/ragent.py predict \
+      --n-env-jobs 32 \
+      --batch-size 32 \
+      --model openai/gpt-4.1 \
+      --temperature 0.5 \
+      --top-p 0.95 \
+      --few-shot-prob 0.0 \
+      --dataset-path bdsaglam/musique-mini \
+      --dataset-name answerable \
+      --dataset-split validation \
+      --retriever hybrid-tei \
+      --retriever-top-k 1 \
+      --repeat 1 \
+      --out tmp/gpt/predictions.jsonl
