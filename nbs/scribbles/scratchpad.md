@@ -766,7 +766,7 @@ python scripts/merge.py \
     --out outputs/Llama-3.1-8B-Instruct-ragent-20250603_205328-merged
 
 huggingface-cli upload --repo-type model \
-    bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250603_205328-merged \
-    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250603_205328-merged
+    bdsaglam/Llama-3.1-8B-Instruct-ragent-20250603_205328-merged \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-20250603_205328-merged/
 
 conda install -c conda-forge cudatoolkit-dev -y
