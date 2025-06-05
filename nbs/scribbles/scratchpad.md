@@ -756,3 +756,17 @@ accelerate launch \
     --lora-alpha 512 \
     --max-completion-length 2048 \
     2>&1 | tee tmp/logs/train-$(date +%s).log
+
+## 2025-06-05
+
+huggingface-cli download bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250603_205328 --repo-type model
+
+python scripts/merge.py \
+    bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250603_205328 \
+    --out outputs/Llama-3.1-8B-Instruct-ragent-20250603_205328-merged
+
+huggingface-cli upload --repo-type model \
+    bdsaglam/Llama-3.1-8B-Instruct-ragent-grpo-20250603_205328-merged \
+    ./outputs/Llama-3.1-8B-Instruct-ragent-grpo-20250603_205328-merged
+
+conda install -c conda-forge cudatoolkit-dev -y
